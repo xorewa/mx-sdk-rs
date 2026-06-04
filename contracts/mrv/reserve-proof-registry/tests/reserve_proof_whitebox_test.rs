@@ -249,18 +249,6 @@ fn seed_vm0042_canonical_state(world: &mut ScenarioWorld) {
                 ManagedBuffer::from(b"burn-tx-001"),
             );
         });
-
-    world
-        .tx()
-        .from(CARBON_SC)
-        .to(BUFFER_SC)
-        .whitebox(mrv_buffer_pool::contract_obj, |sc| {
-            sc.deposit_buffer_credits(
-                ManagedBuffer::from(b"project-001"),
-                BigUint::from(5_000u64),
-                1u64,
-            );
-        });
 }
 
 fn seed_vm0042_supply_only_state(world: &mut ScenarioWorld) {
@@ -307,18 +295,6 @@ fn seed_vm0042_supply_only_state(world: &mut ScenarioWorld) {
                 },
                 ManagedBuffer::from(&bundle_hash[..]),
                 OWNER.to_managed_address(),
-            );
-        });
-
-    world
-        .tx()
-        .from(CARBON_SC)
-        .to(BUFFER_SC)
-        .whitebox(mrv_buffer_pool::contract_obj, |sc| {
-            sc.deposit_buffer_credits(
-                ManagedBuffer::from(b"project-proof-001"),
-                BigUint::from(10u64),
-                1u64,
             );
         });
 }

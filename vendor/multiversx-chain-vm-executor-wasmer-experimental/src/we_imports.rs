@@ -527,6 +527,11 @@ fn wasmer_import_managed_drwa_sync_mirror(env: FunctionEnvMut<VMHooksWrapper>, p
 }
 
 #[rustfmt::skip]
+fn wasmer_import_managed_drwa_native_governance_query(env: FunctionEnvMut<VMHooksWrapper>, query_type: i32, key_handle: i32, dest_handle: i32) -> Result<i32, VMHooksEarlyExit> {
+    with_vm_hooks(env, |vh| vh.managed_drwa_native_governance_query(query_type, key_handle, dest_handle))
+}
+
+#[rustfmt::skip]
 fn wasmer_import_managed_get_esdt_balance(env: FunctionEnvMut<VMHooksWrapper>, address_handle: i32, token_id_handle: i32, nonce: i64, value_handle: i32) -> Result<(), VMHooksEarlyExit> {
     with_vm_hooks(env, |vh| vh.managed_get_esdt_balance(address_handle, token_id_handle, nonce, value_handle))
 }
@@ -1509,6 +1514,7 @@ pub fn generate_import_object(store: &mut Store, vh_wrapper: VMHooksWrapper) -> 
             "managedGetAllTransfersCallValue" => Function::new_typed_with_env(store, &function_env, wasmer_import_managed_get_all_transfers_call_value),
             "managedGetBackTransfers" => Function::new_typed_with_env(store, &function_env, wasmer_import_managed_get_back_transfers),
             "managedDRWASyncMirror" => Function::new_typed_with_env(store, &function_env, wasmer_import_managed_drwa_sync_mirror),
+            "managedDRWANativeGovernanceQuery" => Function::new_typed_with_env(store, &function_env, wasmer_import_managed_drwa_native_governance_query),
             "managedGetESDTBalance" => Function::new_typed_with_env(store, &function_env, wasmer_import_managed_get_esdt_balance),
             "managedGetESDTTokenData" => Function::new_typed_with_env(store, &function_env, wasmer_import_managed_get_esdt_token_data),
             "managedGetESDTTokenType" => Function::new_typed_with_env(store, &function_env, wasmer_import_managed_get_esdt_token_type),

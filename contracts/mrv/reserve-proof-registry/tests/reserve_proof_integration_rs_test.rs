@@ -209,18 +209,6 @@ fn seed_vm0042_runtime(world: &mut ScenarioWorld) {
                 OWNER.to_managed_address(),
             );
         });
-
-    world
-        .tx()
-        .from(CARBON_SC)
-        .to(BUFFER_SC)
-        .whitebox(mrv_buffer_pool::contract_obj, |sc| {
-            sc.deposit_buffer_credits(
-                ManagedBuffer::from(b"project-int-001"),
-                BigUint::from(10u64),
-                1u64,
-            );
-        });
 }
 
 #[test]

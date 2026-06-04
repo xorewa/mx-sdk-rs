@@ -459,6 +459,10 @@ impl<VH: VMHooksSetEarlyExit> VMHooksLegacy for VMHooksLegacyAdapter<VH> {
         self.adapt_vm_hooks(|inner| VMHooks::managed_drwa_sync_mirror(inner, payload_handle))
     }
 
+    fn managed_drwa_native_governance_query(&self, query_type: i32, key_handle: i32, dest_handle: i32) -> i32 {
+        self.adapt_vm_hooks(|inner| VMHooks::managed_drwa_native_governance_query(inner, query_type, key_handle, dest_handle))
+    }
+
     fn managed_get_esdt_balance(&self, address_handle: i32, token_id_handle: i32, nonce: i64, value_handle: i32) {
         self.adapt_vm_hooks(|inner| VMHooks::managed_get_esdt_balance(inner, address_handle, token_id_handle, nonce, value_handle))
     }

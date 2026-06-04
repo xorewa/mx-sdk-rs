@@ -1195,15 +1195,10 @@ pub trait CarbonCreditModule: mrv_common::MrvGovernanceModule {
     fn project_gsoc_serials(&self, project_id: &ManagedBuffer)
     -> UnorderedSetMapper<ManagedBuffer>;
 
-    /// ISSUE-022: cached canonical GSOC serial inventory hash per project.
-    /// Set by `compute_canonical_gsoc_serial_inventory_hash` on first read,
-    /// cleared on every mutation that affects the project's serial set
-    /// (issueGsocCredits, burnAndRetireGsoc when fully retired). The
-    /// underlying compute is O(n²) due to insertion sort over serials
-    /// (ISSUE-022 narrows that algorithm to a separate refactor); the
-    /// cache narrows the practical gas-DoS reachability by ensuring
-    /// repeated VIEW reads (which workers do every cycle) don't pay
-    /// the O(n²) cost on each call.
+    /// Legacy canonical GSOC serial inventory hash cache per project.
+    /// Cleared on every mutation that affects the project's serial set.
+    /// Views must not populate it because reserve-proof reconciliation
+    /// reads this value through read-only cross-contract calls.
     #[storage_mapper("cachedGsocCanonicalHash")]
     fn cached_gsoc_canonical_hash(
         &self,
@@ -1686,19 +1681,10 @@ pub trait CarbonCreditModule: mrv_common::MrvGovernanceModule {
         &self,
         project_id: &ManagedBuffer,
     ) -> ManagedBuffer {
-        // ISSUE-022: read-through cache. Workers verify the canonical
-        // hash on every cycle (often once per second per project); the
-        // cached value is only invalidated when the project's serial
-        // set actually changes, so steady-state reads are O(1) instead
-        // of O(n^2).
-        //
-        // Cache invariant: cached_gsoc_canonical_hash(project_id) is
-        // either empty (next read recomputes + populates) OR equal to
-        // the value compute_canonical_gsoc_serial_inventory_hash would
-        // return for the project's current state. Every code path that
-        // mutates the inputs to that computation (project_gsoc_serials,
-        // gsoc_serial_records, gsoc_retired_serials for serials in this
-        // project) must clear the cache before returning.
+        // ISSUE-022: use the cache only when a mutating path has already
+        // populated it. This function is called from public views and from
+        // reserve-proof read-only cross-contract calls, so it must not write
+        // storage while computing a cache miss.
         let cached = self.cached_gsoc_canonical_hash(project_id);
         if !cached.is_empty() {
             return cached.get();
@@ -1754,9 +1740,6 @@ pub trait CarbonCreditModule: mrv_common::MrvGovernanceModule {
         canonical.append_bytes(b"]");
 
         let hash = self.crypto().sha256(&canonical).as_managed_buffer().clone();
-        // ISSUE-022: populate the read-through cache so the next view
-        // call returns O(1) until the project's serial set mutates.
-        self.cached_gsoc_canonical_hash(project_id).set(&hash);
         hash
     }
 

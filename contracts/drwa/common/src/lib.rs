@@ -24,6 +24,7 @@ std::thread_local! {
 }
 
 #[cfg(target_arch = "wasm32")]
+#[link(wasm_import_module = "env")]
 unsafe extern "C" {
     fn managedDRWASyncMirror(payloadHandle: i32) -> i32;
     fn managedDRWANativeGovernanceQuery(queryType: i32, keyHandle: i32, destHandle: i32) -> i32;

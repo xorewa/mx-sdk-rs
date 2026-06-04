@@ -116,6 +116,7 @@ pub trait VMHooksLegacy: core::fmt::Debug {
     fn managed_get_all_transfers_call_value(&self, transfer_call_values_list_handle: i32);
     fn managed_get_back_transfers(&self, esdt_transfers_value_handle: i32, egld_value_handle: i32);
     fn managed_drwa_sync_mirror(&self, payload_handle: i32) -> i32;
+    fn managed_drwa_native_governance_query(&self, query_type: i32, key_handle: i32, dest_handle: i32) -> i32;
     fn managed_get_esdt_balance(&self, address_handle: i32, token_id_handle: i32, nonce: i64, value_handle: i32);
     fn managed_get_esdt_token_data(&self, address_handle: i32, token_id_handle: i32, nonce: i64, value_handle: i32, properties_handle: i32, hash_handle: i32, name_handle: i32, attributes_handle: i32, creator_handle: i32, royalties_handle: i32, uris_handle: i32);
     fn managed_get_esdt_token_type(&self, address_handle: i32, token_id_handle: i32, nonce: i64, type_handle: i32);
@@ -779,6 +780,11 @@ impl VMHooksLegacy for VMHooksLegacyDefault {
 
     fn managed_drwa_sync_mirror(&self, payload_handle: i32) -> i32 {
         println!("Called: managed_drwa_sync_mirror");
+        0
+    }
+
+    fn managed_drwa_native_governance_query(&self, query_type: i32, key_handle: i32, dest_handle: i32) -> i32 {
+        println!("Called: managed_drwa_native_governance_query");
         0
     }
 
