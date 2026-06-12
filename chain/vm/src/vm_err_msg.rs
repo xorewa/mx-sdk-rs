@@ -5,6 +5,8 @@ pub const NON_PAYABLE_FUNC_EGLD: &str = "function does not accept EGLD payment";
 pub const NON_PAYABLE_FUNC_ESDT: &str = "function does not accept ESDT payment";
 
 pub const ARG_OUT_OF_RANGE: &str = "argument out of range";
+pub const INVALID_ARGUMENT: &str = "invalid argument";
+pub const UNSUPPORTED_NATIVE_ZK_HOOK: &str = "unsupported native ZK hook";
 pub const BIG_INT_BITWISE_OPERATION_NEGATIVE: &str =
     "bitwise operations only allowed on positive integers";
 pub const DIVISION_BY_0: &str = "division by 0";

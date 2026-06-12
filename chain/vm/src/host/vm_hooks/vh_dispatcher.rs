@@ -1,6 +1,9 @@
+use multiversx_chain_core::types::ReturnCode;
 use multiversx_chain_vm_executor::{MemLength, MemPtr, VMHooks, VMHooksEarlyExit};
 
 use super::{VMHooksContext, VMHooksHandler};
+use crate::host::context::TxErrorTrace;
+use crate::vm_err_msg;
 
 pub(super) const RESULT_TRUE: i32 = 1;
 pub(super) const RESULT_FALSE: i32 = 0;
@@ -11,17 +14,43 @@ pub(super) const RESULT_ERROR: i32 = 1;
 #[derive(Debug)]
 pub struct VMHooksDispatcher<C: VMHooksContext> {
     pub(crate) handler: VMHooksHandler<C>,
+    unsafe_mode: bool,
 }
 
 impl<C: VMHooksContext> VMHooksDispatcher<C> {
     pub fn new(vh_context: C) -> Self {
         VMHooksDispatcher {
             handler: VMHooksHandler::new(vh_context),
+            unsafe_mode: false,
         }
     }
 
     pub fn get_handler(&self) -> &VMHooksHandler<C> {
         &self.handler
+    }
+
+    fn fail_conditionally(&mut self, message: &'static str) -> Result<(), VMHooksEarlyExit> {
+        if self.unsafe_mode {
+            let func_name = self.handler.context.input_ref().func_name.clone();
+            self.handler
+                .context
+                .result_lock()
+                .error_trace
+                .push(TxErrorTrace {
+                    function_name: func_name,
+                    error_trace_message: message.to_string(),
+                    additional_info: vec!["unsafe".to_string()],
+                });
+            Ok(())
+        } else {
+            Err(VMHooksEarlyExit::new(ReturnCode::ExecutionFailed.as_u64())
+                .with_const_message(message))
+        }
+    }
+
+    fn unsupported_native_zk_hook() -> Result<i32, VMHooksEarlyExit> {
+        Err(VMHooksEarlyExit::new(ReturnCode::ExecutionFailed.as_u64())
+            .with_const_message(vm_err_msg::UNSUPPORTED_NATIVE_ZK_HOOK))
     }
 }
 
@@ -2615,5 +2644,153 @@ impl<C: VMHooksContext> VMHooks for VMHooksDispatcher<C> {
         self.handler
             .verify_bls_aggregated_signature(key_handle, message_handle, sig_handle)?;
         Ok(0)
+    }
+
+    fn activate_unsafe_mode(&mut self) -> Result<(), VMHooksEarlyExit> {
+        self.handler
+            .use_gas(self.handler.gas_schedule().base_ops_api_cost.finish)?;
+        self.unsafe_mode = true;
+        Ok(())
+    }
+
+    fn deactivate_unsafe_mode(&mut self) -> Result<(), VMHooksEarlyExit> {
+        self.handler
+            .use_gas(self.handler.gas_schedule().base_ops_api_cost.finish)?;
+        self.unsafe_mode = false;
+        Ok(())
+    }
+
+    fn managed_get_num_errors(&mut self) -> Result<i32, VMHooksEarlyExit> {
+        self.handler
+            .use_gas(self.handler.gas_schedule().base_ops_api_cost.get_argument)?;
+        Ok(self.handler.context.result_lock().error_trace.len() as i32)
+    }
+
+    fn managed_get_error_with_index(
+        &mut self,
+        index: i32,
+        error_handle: i32,
+    ) -> Result<(), VMHooksEarlyExit> {
+        self.handler
+            .use_gas(self.handler.gas_schedule().base_ops_api_cost.get_argument)?;
+
+        let error_message = {
+            let tx_result = self.handler.context.result_lock();
+            if index < 0 || index as usize >= tx_result.error_trace.len() {
+                None
+            } else {
+                Some(
+                    tx_result.error_trace[index as usize]
+                        .error_trace_message
+                        .clone(),
+                )
+            }
+        };
+
+        let Some(error_message) = error_message else {
+            return self.fail_conditionally(vm_err_msg::INVALID_ARGUMENT);
+        };
+
+        self.handler.use_gas_for_data_copy(error_message.len())?;
+        self.handler
+            .context
+            .m_types_lock()
+            .mb_set(error_handle, error_message.into_bytes());
+
+        Ok(())
+    }
+
+    fn managed_get_last_error(&mut self, error_handle: i32) -> Result<(), VMHooksEarlyExit> {
+        self.handler
+            .use_gas(self.handler.gas_schedule().base_ops_api_cost.get_argument)?;
+
+        let error_message = self
+            .handler
+            .context
+            .result_lock()
+            .error_trace
+            .last()
+            .map(|error_trace| error_trace.error_trace_message.clone())
+            .unwrap_or_default();
+
+        self.handler.use_gas_for_data_copy(error_message.len())?;
+        self.handler
+            .context
+            .m_types_lock()
+            .mb_set(error_handle, error_message.into_bytes());
+
+        Ok(())
+    }
+
+    fn managed_verify_groth16(
+        &mut self,
+        _curve_id: i32,
+        _proof_handle: i32,
+        _vk_handle: i32,
+        _pub_witness_handle: i32,
+    ) -> Result<i32, VMHooksEarlyExit> {
+        Self::unsupported_native_zk_hook()
+    }
+
+    fn managed_verify_plonk(
+        &mut self,
+        _curve_id: i32,
+        _proof_handle: i32,
+        _vk_handle: i32,
+        _pub_witness_handle: i32,
+    ) -> Result<i32, VMHooksEarlyExit> {
+        Self::unsupported_native_zk_hook()
+    }
+
+    fn managed_add_ec(
+        &mut self,
+        _curve_id: i32,
+        _group_id: i32,
+        _point1_handle: i32,
+        _point2_handle: i32,
+        _result_handle: i32,
+    ) -> Result<i32, VMHooksEarlyExit> {
+        Self::unsupported_native_zk_hook()
+    }
+
+    fn managed_mul_ec(
+        &mut self,
+        _curve_id: i32,
+        _group_id: i32,
+        _point_handle: i32,
+        _scalar_handle: i32,
+        _result_handle: i32,
+    ) -> Result<i32, VMHooksEarlyExit> {
+        Self::unsupported_native_zk_hook()
+    }
+
+    fn managed_multi_exp_ec(
+        &mut self,
+        _curve_id: i32,
+        _group_id: i32,
+        _points_handle: i32,
+        _scalars_handle: i32,
+        _result_handle: i32,
+    ) -> Result<i32, VMHooksEarlyExit> {
+        Self::unsupported_native_zk_hook()
+    }
+
+    fn managed_map_to_curve_ec(
+        &mut self,
+        _curve_id: i32,
+        _group_id: i32,
+        _element_handle: i32,
+        _result_handle: i32,
+    ) -> Result<i32, VMHooksEarlyExit> {
+        Self::unsupported_native_zk_hook()
+    }
+
+    fn managed_pairing_checks_ec(
+        &mut self,
+        _curve_id: i32,
+        _points_g1_handle: i32,
+        _points_g2_handle: i32,
+    ) -> Result<i32, VMHooksEarlyExit> {
+        Self::unsupported_native_zk_hook()
     }
 }
