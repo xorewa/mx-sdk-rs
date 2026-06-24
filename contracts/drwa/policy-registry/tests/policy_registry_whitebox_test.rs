@@ -8,13 +8,13 @@ use multiversx_sc_scenario::imports::*;
 const OWNER: TestAddress = TestAddress::new("owner");
 const GOVERNANCE: TestAddress = TestAddress::new("governance");
 const SC_ADDRESS: TestSCAddress = TestSCAddress::new("drwa-policy-registry");
-const CODE_PATH: MxscPath = MxscPath::new("mxsc:output/drwa-policy-registry.mxsc.json");
+const CODE_PATH: MxscPath = MxscPath::new("output/drwa-policy-registry.mxsc.json");
 const TOKEN_ID_1: &[u8] = b"CARBON-ab12cd";
 const TOKEN_ID_2: &[u8] = b"CARBON-bc23de";
 const TOKEN_ID_3: &[u8] = b"CARBON-cd34ef";
 
 fn world() -> ScenarioWorld {
-    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut world = ScenarioWorld::new();
     world.set_current_dir_from_workspace("contracts/drwa/policy-registry");
     world.register_contract(CODE_PATH, drwa_policy_registry::ContractBuilder);
     world

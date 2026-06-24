@@ -11,7 +11,7 @@
             "id": "tx-total-supply",
             "tx": {
                 "from": "address:acc3",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "totalSupply",
                 "arguments": [],
                 "gasLimit": "100,000,000",
@@ -32,7 +32,7 @@
             "id": "tx-balance-of",
             "tx": {
                 "from": "address:acc3",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "balanceOf",
                 "arguments": [
                     "address:acc1"
@@ -55,7 +55,7 @@
             "id": "tx-owner-of",
             "tx": {
                 "from": "address:acc3",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "ownerOf",
                 "arguments": [
                     "2"
@@ -78,7 +78,7 @@
             "id": "tx-tokens-of-owner",
             "tx": {
                 "from": "address:acc3",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "tokensOfOwner",
                 "arguments": [
                     "address:acc1"
@@ -101,7 +101,7 @@
             "id": "tx-get-kitty-by-id",
             "tx": {
                 "from": "address:acc3",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "getKittyById",
                 "arguments": [
                     "1"
@@ -124,7 +124,7 @@
             "id": "tx-is-ready-to-breed",
             "tx": {
                 "from": "address:acc3",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "isReadyToBreed",
                 "arguments": [
                     "1"
@@ -147,7 +147,7 @@
             "id": "tx-is-pregnant",
             "tx": {
                 "from": "address:acc3",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "isPregnant",
                 "arguments": [
                     "1"
@@ -170,7 +170,7 @@
             "id": "tx-can-breed-with",
             "tx": {
                 "from": "address:acc3",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "canBreedWith",
                 "arguments": [
                     "1",

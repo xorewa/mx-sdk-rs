@@ -9,7 +9,7 @@ const SIGNER_THREE: TestAddress = TestAddress::new("signer-three");
 const SIGNER_FOUR: TestAddress = TestAddress::new("signer-four");
 const SIGNER_FIVE: TestAddress = TestAddress::new("signer-five");
 const ADMIN_SC: TestSCAddress = TestSCAddress::new("drwa-auth-admin");
-const CODE_PATH: MxscPath = MxscPath::new("mxsc:output/drwa-auth-admin.mxsc.json");
+const CODE_PATH: MxscPath = MxscPath::new("drwa-auth-admin/output/drwa-auth-admin.mxsc.json");
 const AUTH_ADMIN_DOMAIN: &[u8] = b"auth_admin";
 const AUTH_ADMIN_HEX_V1: &[u8] =
     b"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -21,8 +21,8 @@ const TEST_TTL_ROUNDS: u64 = 20_000;
 const TEST_TIMELOCK_ROUNDS: u64 = 14_400;
 
 fn world() -> ScenarioWorld {
-    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
-    world.set_current_dir_from_workspace("contracts/drwa/drwa-auth-admin");
+    let mut world = ScenarioWorld::new();
+    world.set_current_dir_from_workspace("contracts/drwa");
     world.register_contract(CODE_PATH, drwa_auth_admin::ContractBuilder);
     world
 }

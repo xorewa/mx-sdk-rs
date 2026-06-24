@@ -9,9 +9,13 @@ const OWNER_ADDRESS: TestAddress = TestAddress::new("owner");
 const ABI_ADDRESS: TestSCAddress = TestSCAddress::new("abi-tester");
 
 fn world() -> ScenarioWorld {
-    let mut blockchain = ScenarioWorld::new().executor_config(ExecutorConfig::Experimental);
+    let mut blockchain = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
     blockchain.set_current_dir_from_workspace("contracts/feature-tests/abi-tester");
-    blockchain.register_contract(ABI_TESTER_PATH_EXPR, abi_tester::ContractBuilder);
+    blockchain.register_partial_contract::<abi_tester::AbiProvider, _>(
+        ABI_TESTER_PATH_EXPR,
+        abi_tester::ContractBuilder,
+        "abi-tester",
+    );
     blockchain
 }
 

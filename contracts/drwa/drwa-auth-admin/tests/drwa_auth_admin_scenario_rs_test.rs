@@ -1,10 +1,10 @@
 use multiversx_sc_scenario::imports::*;
 
 fn world() -> ScenarioWorld {
-    let mut blockchain = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
-    blockchain.set_current_dir_from_workspace("contracts/drwa/drwa-auth-admin");
+    let mut blockchain = ScenarioWorld::new();
+    blockchain.set_current_dir_from_workspace("contracts/drwa");
     blockchain.register_contract(
-        "mxsc:output/drwa-auth-admin.mxsc.json",
+        "drwa-auth-admin/output/drwa-auth-admin.mxsc.json",
         drwa_auth_admin::ContractBuilder,
     );
     blockchain

@@ -6,12 +6,12 @@ const NEW_AUDITOR: TestAddress = TestAddress::new("new_auditor");
 const SUBJECT: TestAddress = TestAddress::new("subject");
 const OTHER: TestAddress = TestAddress::new("other");
 const SC_ADDRESS: TestSCAddress = TestSCAddress::new("drwa-attestation");
-const CODE_PATH: MxscPath = MxscPath::new("mxsc:output/drwa-attestation.mxsc.json");
+const CODE_PATH: MxscPath = MxscPath::new("attestation/output/drwa-attestation.mxsc.json");
 const TOKEN_ID: &str = "CARBON-ab12cd";
 
 fn world() -> ScenarioWorld {
-    let mut blockchain = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
-    blockchain.set_current_dir_from_workspace("contracts/drwa/attestation");
+    let mut blockchain = ScenarioWorld::new();
+    blockchain.set_current_dir_from_workspace("contracts/drwa");
     blockchain.register_contract(CODE_PATH, drwa_attestation::ContractBuilder);
     blockchain
 }

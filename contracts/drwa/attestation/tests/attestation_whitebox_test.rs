@@ -8,12 +8,12 @@ const AUDITOR: TestAddress = TestAddress::new("auditor");
 const SUBJECT: TestAddress = TestAddress::new("subject");
 const OTHER: TestAddress = TestAddress::new("other");
 const SC_ADDRESS: TestSCAddress = TestSCAddress::new("drwa-attestation");
-const CODE_PATH: MxscPath = MxscPath::new("mxsc:output/drwa-attestation.mxsc.json");
+const CODE_PATH: MxscPath = MxscPath::new("attestation/output/drwa-attestation.mxsc.json");
 const TOKEN_ID: &[u8] = b"CARBON-ab12cd";
 
 fn world() -> ScenarioWorld {
-    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
-    world.set_current_dir_from_workspace("contracts/drwa/attestation");
+    let mut world = ScenarioWorld::new();
+    world.set_current_dir_from_workspace("contracts/drwa");
     world.register_contract(CODE_PATH, drwa_attestation::ContractBuilder);
     world
 }

@@ -54,7 +54,7 @@
                     "balance": "999,500",
                     "storage": {}
                 },
-                "sc:kitty_ownership_contract": {
+                "sc:kitty_ownership": {
                     "nonce": "0",
                     "balance": "0",
                     "storage": {
@@ -71,7 +71,7 @@
                     "nonce": "0",
                     "balance": "500",
                     "storage": {
-                        "str:kittyOwnershipContractAddress": "sc:kitty_ownership_contract",
+                        "str:kittyOwnershipContractAddress": "sc:kitty_ownership",
                         "str:genZeroKittyStartingPrice": "100",
                         "str:genZeroKittyEndingPrice": "500",
                         "str:genZeroKittyAuctionDuration": "100,000"

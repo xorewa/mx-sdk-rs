@@ -13,13 +13,12 @@ const SIGNER_ONE: TestAddress = TestAddress::new("signer-one");
 const SIGNER_TWO: TestAddress = TestAddress::new("signer-two");
 const SC_ADDRESS: TestSCAddress = TestSCAddress::new("mrv-aggregator");
 const GOVERNANCE_SC: TestSCAddress = TestSCAddress::new("mrv-governance");
-const CODE_PATH: MxscPath = MxscPath::new("mxsc:output/mrv-aggregator.mxsc.json");
-const GOVERNANCE_CODE: MxscPath =
-    MxscPath::new("mxsc:../../governance/output/mrv-governance.mxsc.json");
+const CODE_PATH: MxscPath = MxscPath::new("output/mrv-aggregator.mxsc.json");
+const GOVERNANCE_CODE: MxscPath = MxscPath::new("../../governance/output/mrv-governance.mxsc.json");
 const TEST_DEVICE_SECRET: [u8; 32] = [7u8; 32];
 
 fn world() -> ScenarioWorld {
-    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut world = ScenarioWorld::new();
     world.set_current_dir_from_workspace("contracts/mrv/aggregator");
     world.register_contract(CODE_PATH, mrv_aggregator::ContractBuilder);
     world.register_contract(GOVERNANCE_CODE, mrv_governance::ContractBuilder);

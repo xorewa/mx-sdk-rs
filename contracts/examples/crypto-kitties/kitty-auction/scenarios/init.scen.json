@@ -14,7 +14,7 @@
                 {
                     "creatorAddress": "address:my_address",
                     "creatorNonce": "0",
-                    "newAddress": "sc:kitty_ownership_contract"
+                    "newAddress": "sc:kitty_ownership"
                 },
                 {
                     "creatorAddress": "address:my_address",
@@ -54,7 +54,7 @@
                     "100",
                     "500",
                     "100,000",
-                    "sc:kitty_ownership_contract"
+                    "sc:kitty_ownership"
                 ],
                 "gasLimit": "1,000,000",
                 "gasPrice": "0"
@@ -72,7 +72,7 @@
             "id": "tx-set-auction-contract-address",
             "tx": {
                 "from": "address:my_address",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "setKittyAuctionContractAddress",
                 "arguments": [
                     "sc:kitty_auction_contract"
@@ -96,7 +96,7 @@
                     "balance": "1,000,000",
                     "storage": {}
                 },
-                "sc:kitty_ownership_contract": {
+                "sc:kitty_ownership": {
                     "nonce": "0",
                     "balance": "0",
                     "storage": {
@@ -110,7 +110,7 @@
                     "nonce": "0",
                     "balance": "0",
                     "storage": {
-                        "str:kittyOwnershipContractAddress": "sc:kitty_ownership_contract",
+                        "str:kittyOwnershipContractAddress": "sc:kitty_ownership",
                         "str:genZeroKittyStartingPrice": "100",
                         "str:genZeroKittyEndingPrice": "500",
                         "str:genZeroKittyAuctionDuration": "100,000"

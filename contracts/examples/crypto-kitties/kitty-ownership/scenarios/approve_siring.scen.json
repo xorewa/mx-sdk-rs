@@ -11,7 +11,7 @@
             "id": "tx-approve-siring",
             "tx": {
                 "from": "address:acc1",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "approveSiring",
                 "arguments": [
                     "address:acc2",
@@ -31,7 +31,7 @@
         {
             "step": "checkState",
             "accounts": {
-                "sc:kitty_ownership_contract": {
+                "sc:kitty_ownership": {
                     "nonce": "0",
                     "balance": "0",
                     "storage": {

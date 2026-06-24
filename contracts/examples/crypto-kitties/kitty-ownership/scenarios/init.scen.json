@@ -19,7 +19,7 @@
                 {
                     "creatorAddress": "address:my_address",
                     "creatorNonce": "1",
-                    "newAddress": "sc:kitty_ownership_contract"
+                    "newAddress": "sc:kitty_ownership"
                 }
             ],
             "currentBlockInfo": {
@@ -74,7 +74,7 @@
                     "balance": "1,000,000",
                     "storage": {}
                 },
-                "sc:kitty_ownership_contract": {
+                "sc:kitty_ownership": {
                     "nonce": "0",
                     "balance": "0",
                     "storage": {

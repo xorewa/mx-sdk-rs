@@ -9,13 +9,13 @@ const HOLDER: TestAddress = TestAddress::new("holder");
 const GOVERNANCE: TestAddress = TestAddress::new("governance");
 const SC_ADDRESS: TestSCAddress = TestSCAddress::new("drwa-asset-manager");
 const POLICY_SC_ADDRESS: TestSCAddress = TestSCAddress::new("drwa-policy-registry");
-const CODE_PATH: MxscPath = MxscPath::new("mxsc:output/drwa-asset-manager.mxsc.json");
+const CODE_PATH: MxscPath = MxscPath::new("asset-manager/output/drwa-asset-manager.mxsc.json");
 const POLICY_CODE_PATH: MxscPath =
-    MxscPath::new("mxsc:../policy-registry/output/drwa-policy-registry.mxsc.json");
+    MxscPath::new("policy-registry/output/drwa-policy-registry.mxsc.json");
 
 fn world() -> ScenarioWorld {
-    let mut blockchain = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
-    blockchain.set_current_dir_from_workspace("contracts/drwa/asset-manager");
+    let mut blockchain = ScenarioWorld::new();
+    blockchain.set_current_dir_from_workspace("contracts/drwa");
     blockchain.register_contract(CODE_PATH, drwa_asset_manager::ContractBuilder);
     blockchain.register_contract(POLICY_CODE_PATH, drwa_policy_registry::ContractBuilder);
 

@@ -6,11 +6,11 @@ use drwa_policy_registry::drwa_policy_registry_proxy::DrwaPolicyRegistryProxy;
 const OWNER: TestAddress = TestAddress::new("owner");
 const GOVERNANCE: TestAddress = TestAddress::new("governance");
 const SC_ADDRESS: TestSCAddress = TestSCAddress::new("drwa-policy-registry-upgrade");
-const CODE_PATH: MxscPath = MxscPath::new("mxsc:output/drwa-policy-registry.mxsc.json");
+const CODE_PATH: MxscPath = MxscPath::new("output/drwa-policy-registry.mxsc.json");
 const TOKEN_ID: &[u8] = b"CARBON-ab12cd";
 
 fn world() -> ScenarioWorld {
-    let mut blockchain = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut blockchain = ScenarioWorld::new();
     blockchain.set_current_dir_from_workspace("contracts/drwa/policy-registry");
     blockchain.register_contract(CODE_PATH, drwa_policy_registry::ContractBuilder);
     blockchain

@@ -18,7 +18,7 @@
             "id": "tx-give-birth",
             "tx": {
                 "from": "address:acc3",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "function": "giveBirth",
                 "arguments": [
                     "2"
@@ -60,7 +60,7 @@
                     "balance": "1,000,000",
                     "storage": {}
                 },
-                "sc:kitty_ownership_contract": {
+                "sc:kitty_ownership": {
                     "nonce": "0",
                     "balance": "0",
                     "storage": {

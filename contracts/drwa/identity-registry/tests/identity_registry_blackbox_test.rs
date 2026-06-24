@@ -6,10 +6,10 @@ const NEW_GOVERNANCE: TestAddress = TestAddress::new("new_governance");
 const ISSUER: TestAddress = TestAddress::new("issuer");
 const INTRUDER: TestAddress = TestAddress::new("intruder");
 const SC_ADDRESS: TestSCAddress = TestSCAddress::new("drwa-identity-registry");
-const CODE_PATH: MxscPath = MxscPath::new("mxsc:output/drwa-identity-registry.mxsc.json");
+const CODE_PATH: MxscPath = MxscPath::new("output/drwa-identity-registry.mxsc.json");
 
 fn world() -> ScenarioWorld {
-    let mut blockchain = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut blockchain = ScenarioWorld::new();
     blockchain.set_current_dir_from_workspace("contracts/drwa/identity-registry");
     blockchain.register_contract(CODE_PATH, drwa_identity_registry::ContractBuilder);
     blockchain

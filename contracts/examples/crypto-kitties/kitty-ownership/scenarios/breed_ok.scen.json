@@ -11,7 +11,7 @@
             "id": "tx-breed-ok",
             "tx": {
                 "from": "address:acc2",
-                "to": "sc:kitty_ownership_contract",
+                "to": "sc:kitty_ownership",
                 "egldValue": "10",
                 "function": "breedWith",
                 "arguments": [
@@ -47,7 +47,7 @@
                     "balance": "1,000,000",
                     "storage": {}
                 },
-                "sc:kitty_ownership_contract": {
+                "sc:kitty_ownership": {
                     "nonce": "0",
                     "balance": "10",
                     "storage": {

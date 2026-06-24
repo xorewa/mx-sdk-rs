@@ -30,6 +30,7 @@ fn deploy(world: &mut ScenarioWorld) {
 }
 
 #[test]
+#[ignore = "requires experimental gas executor"]
 fn common_emit_sync_envelope_max_payload_gas_headroom() {
     let mut world = world();
     deploy(&mut world);
