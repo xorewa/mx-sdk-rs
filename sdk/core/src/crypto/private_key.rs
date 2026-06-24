@@ -20,7 +20,7 @@ pub const SEED_LENGTH: usize = 32;
 const EGLD_COIN_TYPE: u32 = 508;
 const HARDENED: u32 = 0x80000000;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct PrivateKey(pub [u8; PRIVATE_KEY_LENGTH]);
 
 impl PrivateKey {
@@ -124,21 +124,6 @@ impl PrivateKey {
         PrivateKey::from_bytes(key.as_slice()).unwrap()
     }
 
-    /// Currently not in use.
-    ///
-    /// Guarded by feature "wallet-full", to avoid unnecessarily importing `rand`.
-    #[cfg(feature = "wallet-full")]
-    pub fn generate<T>(r: &mut T) -> PrivateKey
-    where
-        T: rand::CryptoRng + rand::Rng,
-    {
-        let mut secret_key = PrivateKey([0u8; 64]);
-
-        r.fill_bytes(&mut secret_key.0);
-
-        secret_key
-    }
-
     pub fn to_bytes(&self) -> [u8; PRIVATE_KEY_LENGTH] {
         self.0
     }
@@ -147,7 +132,11 @@ impl PrivateKey {
         &self.0
     }
 
-    pub fn sign(&self, message: Vec<u8>) -> [u8; 64] {
+    pub fn to_hex(&self) -> String {
+        hex::encode(&self.0[..32])
+    }
+
+    pub fn sign(&self, message: impl AsRef<[u8]>) -> [u8; 64] {
         let mut h: Sha512 = Sha512::new();
         h.update(&self.0[..32]);
 
@@ -163,7 +152,7 @@ impl PrivateKey {
         expanded_secret_key[31] |= 64;
 
         h.update(&digest1[32..]);
-        h.update(&message);
+        h.update(message.as_ref());
         message_digest.copy_from_slice(h.finalize_reset().as_ref());
 
         let message_digest_reduced = sc_reduce(message_digest);
@@ -174,7 +163,7 @@ impl PrivateKey {
 
         h.update(encoded_r);
         h.update(&self.0[32..]);
-        h.update(&message);
+        h.update(message.as_ref());
         hram_digest.copy_from_slice(h.finalize_reset().as_ref());
 
         let hram_digest_reduced = sc_reduce(hram_digest);
@@ -196,7 +185,13 @@ impl PrivateKey {
 
 impl Display for PrivateKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        hex::encode(&self.0[..32]).fmt(f)
+        self.to_hex().fmt(f)
+    }
+}
+
+impl std::fmt::Debug for PrivateKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "PrivateKey({})", self)
     }
 }
 
@@ -205,7 +200,7 @@ impl Serialize for PrivateKey {
     where
         S: Serializer,
     {
-        serializer.serialize_str(self.to_string().as_str())
+        serializer.serialize_str(self.to_hex().as_str())
     }
 }
 

@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use anyhow::{Result, anyhow};
 use multiversx_chain_core::std::Bech32Address;
 
@@ -16,7 +18,7 @@ const PEM_MARKER_SUFFIX: &str = "-----";
 /// round-trip through [`WalletPem::from_pem_str`] / [`WalletPem::to_pem_str`]
 /// preserves the original human-readable part (e.g. `"erd"` or a custom one).
 pub struct WalletPem {
-    pub priv_key: PrivateKey,
+    pub private_key: PrivateKey,
     pub address: Bech32Address,
 }
 
@@ -44,9 +46,21 @@ impl WalletPem {
         let private_key_bytes = &decoded[..decoded.len() / 2];
         let private_key_str = std::str::from_utf8(private_key_bytes)
             .map_err(|e| anyhow!("invalid UTF-8 in private key: {e}"))?;
-        let priv_key = PrivateKey::from_hex_str(private_key_str)?;
+        let private_key = PrivateKey::from_hex_str(private_key_str)?;
 
-        Ok(WalletPem { priv_key, address })
+        Ok(WalletPem {
+            private_key,
+            address,
+        })
+    }
+
+    /// Reads a PEM file from disk and parses it with [`WalletPem::from_pem_str`].
+    pub fn from_pem_file<P>(file_path: P) -> Result<Self>
+    where
+        P: AsRef<Path>,
+    {
+        let contents = std::fs::read_to_string(file_path)?;
+        Self::from_pem_str(&contents)
     }
 
     /// Produces a PEM string from this `WalletPem`.
@@ -76,10 +90,10 @@ impl WalletPem {
     }
 
     pub fn private_key_hex(&self) -> String {
-        self.priv_key.to_string()
+        self.private_key.to_hex()
     }
 
     pub fn public_key_hex(&self) -> String {
-        PublicKey::from(&self.priv_key).to_string()
+        PublicKey::from(&self.private_key).to_hex()
     }
 }

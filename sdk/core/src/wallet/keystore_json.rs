@@ -1,23 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-pub const KDF_N: u32 = 4096;
-pub const KDF_R: u32 = 8;
-pub const KDF_P: u32 = 1;
-pub const KDF_DKLEN: usize = 32;
-pub const KEYSTORE_VERSION: u32 = 4;
+use multiversx_chain_core::std::Bech32Address;
 
-#[derive(Debug)]
-pub enum KeystoreError {
-    InvalidPassword,
-    InvalidKdf,
-    InvalidCipher,
-}
-
-#[derive(Debug)]
-pub enum InsertPassword {
-    Plaintext(String),
-    StandardInput,
-}
+use super::{Keystore, KeystoreRandomness};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CryptoParams {
@@ -53,9 +38,63 @@ pub struct KeystoreJson {
     pub crypto: Crypto,
 }
 
-#[derive(Clone, Debug)]
-pub struct DecryptionParams {
-    pub derived_key_first_half: Vec<u8>,
-    pub iv: Vec<u8>,
-    pub data: Vec<u8>,
+impl Keystore {
+    pub fn from_json(json: KeystoreJson) -> anyhow::Result<Self> {
+        let ciphertext = hex::decode(&json.crypto.ciphertext)?;
+        let iv_bytes = hex::decode(&json.crypto.cipherparams.iv)?;
+        let iv: [u8; 16] = iv_bytes
+            .as_slice()
+            .try_into()
+            .map_err(|_: std::array::TryFromSliceError| anyhow::anyhow!("iv must be 16 bytes"))?;
+        let salt_bytes = hex::decode(&json.crypto.kdfparams.salt)?;
+        let salt: [u8; 32] = salt_bytes
+            .as_slice()
+            .try_into()
+            .map_err(|_: std::array::TryFromSliceError| anyhow::anyhow!("salt must be 32 bytes"))?;
+        let mac = hex::decode(&json.crypto.mac)?;
+        Ok(Keystore {
+            version: json.version,
+            kind: json.kind,
+            address: Bech32Address::from_bech32_str(&json.bech32),
+            cipher: json.crypto.cipher,
+            ciphertext,
+            kdf: json.crypto.kdf,
+            n: json.crypto.kdfparams.n,
+            r: json.crypto.kdfparams.r,
+            p: json.crypto.kdfparams.p,
+            dklen: json.crypto.kdfparams.dklen,
+            mac,
+            randomness: KeystoreRandomness {
+                salt,
+                iv,
+                id: json.id,
+            },
+        })
+    }
+
+    pub fn to_json(&self) -> KeystoreJson {
+        KeystoreJson {
+            version: self.version,
+            kind: self.kind.clone(),
+            id: self.randomness.id.clone(),
+            address: self.address.address.to_hex(),
+            bech32: self.address.bech32.clone(),
+            crypto: Crypto {
+                cipher: self.cipher.clone(),
+                cipherparams: CryptoParams {
+                    iv: hex::encode(self.randomness.iv),
+                },
+                ciphertext: hex::encode(&self.ciphertext),
+                kdf: self.kdf.clone(),
+                kdfparams: KdfParams {
+                    salt: hex::encode(self.randomness.salt),
+                    n: self.n,
+                    r: self.r,
+                    p: self.p,
+                    dklen: self.dklen,
+                },
+                mac: hex::encode(&self.mac),
+            },
+        }
+    }
 }

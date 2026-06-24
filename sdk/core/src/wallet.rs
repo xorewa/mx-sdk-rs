@@ -1,16 +1,20 @@
 mod keystore;
+mod keystore_error;
 mod keystore_json;
 mod wallet_pem;
 
 pub use keystore::Keystore;
+pub use keystore::KeystoreRandomness;
+pub use keystore_error::KeystoreError;
 pub use keystore_json::*;
 pub use wallet_pem::WalletPem;
 
+// TODO: move under wallet
+pub use crate::crypto::private_key::PrivateKey;
+pub use crate::crypto::public_key::PublicKey;
+
 use core::str;
-use std::{
-    io::{self, Write},
-    path::Path,
-};
+use std::path::Path;
 
 use anyhow::Result;
 use bip39::Mnemonic;
@@ -22,84 +26,77 @@ use serde_json::json;
 use sha2::Digest;
 use sha3::Keccak256;
 
-use crate::{
-    crypto::{private_key::PrivateKey, public_key::PublicKey},
-    data::transaction::Transaction,
-};
+use crate::data::transaction::Transaction;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {
-    priv_key: PrivateKey,
+    pub private_key: PrivateKey,
     pub address: Address,
-    pub hrp: Option<Bech32Hrp>,
+    pub source: WalletSource,
+}
+
+/// Optional structure that indicates how the [`Wallet`] was created, with additional metadata.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum WalletSource {
+    Mnemonic,
+    PrivateKey,
+    PemFile(Bech32Hrp),
+    TestWallet(&'static str),
+    Keystore(Bech32Hrp),
+}
+
+impl Wallet {
+    pub fn new(private_key: PrivateKey, source: WalletSource) -> Self {
+        let address = PublicKey::from(&private_key).to_address();
+        Wallet {
+            private_key,
+            address,
+            source,
+        }
+    }
 }
 
 impl From<WalletPem> for Wallet {
     fn from(wallet_pem: WalletPem) -> Self {
-        Self::from_private_key(wallet_pem.priv_key, Some(wallet_pem.address.hrp))
+        Self::new(
+            wallet_pem.private_key,
+            WalletSource::PemFile(wallet_pem.address.hrp),
+        )
+    }
+}
+
+impl From<PrivateKey> for Wallet {
+    fn from(private_key: PrivateKey) -> Self {
+        Self::new(private_key, WalletSource::PrivateKey)
     }
 }
 
 impl Wallet {
-    fn from_private_key(priv_key: PrivateKey, hrp: Option<Bech32Hrp>) -> Self {
-        let address = PublicKey::from(&priv_key).to_address();
-        Wallet {
-            priv_key,
-            address,
-            hrp,
-        }
-    }
-
     pub fn from_mnemonic_string(mnemonic_str: String) -> Wallet {
         let mnemonic = Mnemonic::parse(mnemonic_str.replace('\n', "")).unwrap();
         let private_key = PrivateKey::from_mnemonic(mnemonic, 0u32, 0u32);
-        Self::from_private_key(private_key, None)
+        Self::new(private_key, WalletSource::Mnemonic)
     }
 
+    #[deprecated(
+        since = "0.67.0",
+        note = "Use `PrivateKey::from_hex_str(hex).map(Wallet::from)` instead"
+    )]
     pub fn from_private_key_hex(priv_key: &str) -> Result<Self> {
-        let priv_key = PrivateKey::from_hex_str(priv_key)?;
-        Ok(Self::from_private_key(priv_key, None))
+        let private_key = PrivateKey::from_hex_str(priv_key)?;
+        Ok(Self::new(private_key, WalletSource::PrivateKey))
     }
 
     pub fn from_pem_file<P>(file_path: P) -> Result<Self>
     where
         P: AsRef<Path>,
     {
-        let contents = std::fs::read_to_string(file_path)?;
-        Self::from_pem_file_contents(contents)
+        Ok(WalletPem::from_pem_file(file_path)?.into())
     }
 
-    pub fn from_pem_file_contents(contents: String) -> Result<Self> {
-        Ok(WalletPem::from_pem_str(&contents)?.into())
-    }
-
-    pub fn get_shard(&self) -> u8 {
-        let address = self.to_address();
-        let address_bytes = address.as_bytes();
-        address_bytes[address_bytes.len() - 1] % 3
-    }
-
-    pub fn from_keystore_secret<P: AsRef<Path>>(
-        file_path: P,
-        insert_password: InsertPassword,
-    ) -> Result<Self> {
-        let keystore = Keystore::from_file(&file_path);
-        let decryption_params = match insert_password {
-            InsertPassword::Plaintext(password) => {
-                keystore.validate_password(&password).unwrap_or_else(|e| {
-                    panic!("Error: {:?}", e);
-                })
-            }
-            InsertPassword::StandardInput => keystore
-                .validate_password(&Self::get_keystore_password())
-                .unwrap_or_else(|e| {
-                    panic!("Error: {:?}", e);
-                }),
-        };
-        let priv_key = PrivateKey::from_hex_str(
-            hex::encode(Keystore::decrypt_secret_key(decryption_params)).as_str(),
-        )?;
-        Ok(Self::from_private_key(priv_key, None))
+    pub(crate) fn new_test_wallet(name: &'static str, pem: &str) -> Self {
+        let wallet_pem = WalletPem::from_pem_str(pem).unwrap();
+        Self::new(wallet_pem.private_key, WalletSource::TestWallet(name))
     }
 
     #[deprecated(
@@ -115,11 +112,15 @@ impl Wallet {
     }
 
     pub fn private_key_hex(&self) -> String {
-        self.priv_key.to_string()
+        self.private_key.to_hex()
+    }
+
+    pub fn public_key(&self) -> PublicKey {
+        PublicKey::from(&self.private_key)
     }
 
     pub fn public_key_hex(&self) -> String {
-        PublicKey::from(&self.priv_key).to_string()
+        PublicKey::from(&self.private_key).to_hex()
     }
 
     pub fn sign_tx(&self, unsign_tx: &Transaction) -> [u8; 64] {
@@ -135,22 +136,16 @@ impl Wallet {
             tx_bytes = h.finalize().to_vec();
         }
 
-        self.priv_key.sign(tx_bytes)
+        self.private_key.sign(tx_bytes)
     }
 
-    pub fn sign_bytes(&self, data: Vec<u8>) -> [u8; 64] {
-        self.priv_key.sign(data)
-    }
-
-    pub fn get_keystore_password() -> String {
-        print!("Insert password: ");
-        io::stdout().flush().unwrap();
-        rpassword::read_password().unwrap()
+    pub fn sign_bytes(&self, data: impl AsRef<[u8]>) -> [u8; 64] {
+        self.private_key.sign(data)
     }
 
     pub fn to_pem(&self, hrp: Bech32Hrp) -> WalletPem {
         WalletPem {
-            priv_key: self.priv_key,
+            private_key: self.private_key,
             address: Bech32Address::encode_address(hrp, self.address.clone()),
         }
     }
