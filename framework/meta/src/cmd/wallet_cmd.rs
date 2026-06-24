@@ -200,7 +200,7 @@ fn new(new_args: &WalletNewArgs) {
     let hrp = new_args
         .hrp
         .as_deref()
-        .map(Bech32Hrp::from)
+        .map(|hrp| Bech32Hrp::try_from(hrp).expect("invalid HRP"))
         .unwrap_or_default();
 
     let new_wallet_info = if let Some(shard) = new_args.shard {
