@@ -41,5 +41,5 @@ serial_test = { version = "3.2.0" }
 chain-simulator-tests = []
 
 [patch.crates-io]
-multiversx-chain-vm-executor = { path = "../../../vendor/multiversx-chain-vm-executor" }
-multiversx-chain-vm-executor-wasmer-experimental = { path = "../../../vendor/multiversx-chain-vm-executor-wasmer-experimental" }
+multiversx-chain-vm-executor = { path = "../../../../mx-vm-executor-rs/vm-executor" }
+multiversx-chain-vm-executor-wasmer-experimental = { path = "../../../../mx-vm-executor-rs/vm-executor-experimental" }

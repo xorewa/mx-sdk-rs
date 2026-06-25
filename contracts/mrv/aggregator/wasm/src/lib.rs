@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           30
+// Endpoints:                           33
 // Async Callback (empty):               1
-// Total number of exported functions:  33
+// Total number of exported functions:  36
 
 #![no_std]
 
@@ -31,6 +31,9 @@ multiversx_sc_wasm_adapter::endpoints! {
         registerOracle => register_oracle
         deregisterOracle => deregister_oracle
         isOracleAuthorized => is_oracle_authorized
+        registerOracleForSource => register_oracle_for_source
+        revokeOracleSource => revoke_oracle_source
+        isOracleSourceAuthorized => is_oracle_source_authorized
         registerVerifier => register_verifier
         deregisterVerifier => deregister_verifier
         isVerifierAuthorized => is_verifier_authorized
