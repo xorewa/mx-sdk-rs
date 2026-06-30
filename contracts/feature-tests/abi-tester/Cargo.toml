@@ -20,3 +20,6 @@ workspace = true
 
 [dependencies]
 bitflags = "2.9"
+
+[dependencies.drwa-common]
+path = "../../drwa/common"
