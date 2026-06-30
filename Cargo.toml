@@ -257,6 +257,26 @@ members = [
   # "contracts/feature-tests/gas-tests", ## uncomment for easier development
 ]
 
+[workspace.dependencies.multiversx-sc]
+version = "0.66.2"
+path = "framework/base"
+
+[workspace.dependencies.multiversx-sc-scenario]
+version = "0.66.2"
+path = "framework/scenario"
+
+[workspace.dependencies.multiversx-sc-meta-lib]
+version = "0.66.2"
+path = "framework/meta-lib"
+
+[workspace.dependencies.multiversx-sc-snippets]
+version = "0.66.2"
+path = "framework/snippets"
+
+[workspace.dependencies.multiversx-sc-modules]
+version = "0.66.2"
+path = "contracts/modules"
+
 [patch.crates-io]
 multiversx-chain-vm-executor = { path = "../mx-vm-executor-rs/vm-executor" }
 multiversx-chain-vm-executor-wasmer-experimental = { path = "../mx-vm-executor-rs/vm-executor-experimental" }

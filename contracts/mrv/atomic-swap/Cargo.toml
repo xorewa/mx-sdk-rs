@@ -9,16 +9,14 @@ authors = ["Dharitri <dev@dharitri.org>"]
 path = "src/lib.rs"
 
 [dependencies.multiversx-sc]
-version = "0.66.1"
-path = "../../../framework/base"
+workspace = true
 
 [dependencies.mrv-common]
 path = "../common"
 
 [dev-dependencies.multiversx-sc-scenario]
-version = "0.66.1"
+workspace = true
 features = ["wasmer-experimental"]
-path = "../../../framework/scenario"
 
 [dev-dependencies.mrv-governance]
 path = "../governance"

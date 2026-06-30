@@ -24,12 +24,10 @@ path = "../attestation"
 path = "../common"
 
 [dependencies.multiversx-sc-snippets]
-version = "0.66.1"
-path = "../../../framework/snippets"
+workspace = true
 
 [dependencies.multiversx-sc]
-version = "0.66.1"
-path = "../../../framework/base"
+workspace = true
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

@@ -17,7 +17,6 @@ name = "abi-tester"
 version = "0.0.0"
 dependencies = [
  "bitflags 2.11.1",
- "drwa-common",
  "multiversx-sc",
  "multiversx-sc-meta-lib",
  "multiversx-sc-scenario",
@@ -37,6 +36,19 @@ version = "0.0.0"
 dependencies = [
  "multiversx-sc",
  "multiversx-sc-scenario",
+]
+
+[[package]]
+name = "adder-interactor"
+version = "0.0.0"
+dependencies = [
+ "adder",
+ "clap",
+ "multiversx-sc-snippets",
+ "serde",
+ "serial_test",
+ "tokio",
+ "toml",
 ]
 
 [[package]]
@@ -263,19 +275,6 @@ version = "0.0.0"
 dependencies = [
  "basic-features",
  "multiversx-sc-meta-lib",
-]
-
-[[package]]
-name = "basic-interactor"
-version = "0.0.0"
-dependencies = [
- "adder",
- "clap",
- "multiversx-sc-snippets",
- "serde",
- "serial_test",
- "tokio",
- "toml",
 ]
 
 [[package]]
@@ -3687,8 +3686,12 @@ dependencies = [
  "multiversx-sdk",
  "multiversx-sdk-dapp",
  "multiversx-sdk-http",
+ "pathdiff",
+ "serde",
  "serde_json",
+ "serial_test",
  "tokio",
+ "toml",
 ]
 
 [[package]]
