@@ -23,5 +23,9 @@ optional = true
 wasmer-prod = ["multiversx-chain-vm-wasmer-prod"]
 wasmer-experimental = ["multiversx-sc-scenario/wasmer-experimental"]
 
+[patch.crates-io]
+multiversx-chain-vm-executor = { path = "../../../../mx-vm-executor-rs/vm-executor" }
+multiversx-chain-vm-executor-wasmer-experimental = { path = "../../../../mx-vm-executor-rs/vm-executor-experimental" }
+
 [workspace]
 members = ["."]

@@ -1397,8 +1397,6 @@ dependencies = [
 [[package]]
 name = "multiversx-chain-vm-executor"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b72af69cd251075c0bc020ea72f0d2056ac0966fc17aced17b866a5324536e28"
 dependencies = [
  "serde",
 ]
@@ -1406,7 +1404,6 @@ dependencies = [
 [[package]]
 name = "multiversx-chain-vm-executor-wasmer"
 version = "0.5.1"
-source = "git+https://github.com/multiversx/mx-vm-executor-rs?rev=4af36a92fc0c883eabd391389877ef3d6b8e67b3#4af36a92fc0c883eabd391389877ef3d6b8e67b3"
 dependencies = [
  "log",
  "loupe",
@@ -1420,8 +1417,6 @@ dependencies = [
 [[package]]
 name = "multiversx-chain-vm-executor-wasmer-experimental"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9a714b389463294ca1f9c8895804a6a2bac11b9609aaeabe633cfb033ac62f7"
 dependencies = [
  "log",
  "loupe",

@@ -23,12 +23,15 @@ path = "../vm"
 
 [dependencies.multiversx-chain-vm-executor]
 version = "=0.5.1"
+path = "../../../mx-vm-executor-rs/vm-executor"
 
 [dependencies.multiversx-chain-vm-executor-wasmer]
 version = "=0.5.1"
 default-features = false
-git = "https://github.com/multiversx/mx-vm-executor-rs"
-rev = "4af36a92fc0c883eabd391389877ef3d6b8e67b3"
+path = "../../../mx-vm-executor-rs/vm-executor-wasmer"
 
 [workspace]
 members = ["."]
+
+[patch.crates-io]
+multiversx-chain-vm-executor = { path = "../../../mx-vm-executor-rs/vm-executor" }
