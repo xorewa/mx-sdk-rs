@@ -29,7 +29,7 @@ impl WasmerProdRuntimeRef for RuntimeRefAdapter {
     fn vm_hooks(
         &self,
         instance_state: WasmerProdInstanceState,
-    ) -> Box<dyn VMHooksLegacy + Send + Sync> {
+    ) -> Box<dyn VMHooksLegacy> {
         let runtime = self.0.upgrade();
         let tx_context_ref = runtime.get_executor_context();
         let instance_state_adapter = WasmerProdInstanceStateAdapter(instance_state);
