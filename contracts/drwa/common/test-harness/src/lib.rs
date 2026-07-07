@@ -6,9 +6,9 @@
 multiversx_sc::imports!();
 
 use drwa_common::{
-    DrwaCallerDomain, DrwaSyncOperation, DrwaSyncOperationType, push_len_prefixed,
-    require_valid_aml_status, require_valid_kyc_status, require_valid_token_id,
-    serialize_sync_envelope_payload,
+    DrwaCallerDomain, DrwaSyncOperation, DrwaSyncOperationType,
+    invoke_drwa_native_governance_query, push_len_prefixed, require_valid_aml_status,
+    require_valid_kyc_status, require_valid_token_id, serialize_sync_envelope_payload,
 };
 
 #[multiversx_sc::contract]
@@ -108,5 +108,16 @@ pub trait DrwaCommonTestHarness: drwa_common::DrwaGovernanceModule {
 
         let envelope = self.emit_sync_envelope(DrwaCallerDomain::PolicyRegistry, operations);
         envelope.operations.len()
+    }
+
+    /// Wraps the native DRWA governance query VM hook so scenario tests can
+    /// prove a compiled contract imports and reaches the hook.
+    #[endpoint(testNativeGovernanceQuery)]
+    fn test_native_governance_query(
+        &self,
+        query_type: i32,
+        key: ManagedBuffer,
+    ) -> OptionalValue<ManagedBuffer> {
+        invoke_drwa_native_governance_query(query_type, &key)
     }
 }

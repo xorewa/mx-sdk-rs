@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           11
+// Endpoints:                           12
 // Async Callback (empty):               1
-// Total number of exported functions:  14
+// Total number of exported functions:  15
 
 #![no_std]
 
@@ -26,6 +26,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         testPushLenPrefixed => test_push_len_prefixed
         testSerializeSyncPayload => test_serialize_sync_payload
         testEmitMaxSyncEnvelope => test_emit_max_sync_envelope
+        testNativeGovernanceQuery => test_native_governance_query
         setGovernance => set_governance
         acceptGovernance => accept_governance
         revokeGovernance => revoke_governance
