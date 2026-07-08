@@ -23,15 +23,17 @@ path = "../vm"
 
 [dependencies.multiversx-chain-vm-executor]
 version = "=0.5.1"
-path = "../../../mx-vm-executor-rs/vm-executor"
+git = "https://github.com/xorewa/mx-vm-executor-rs"
+rev = "830f3efa2a1c8103424e4dd0c65b786e1f8305cf"
 
 [dependencies.multiversx-chain-vm-executor-wasmer]
 version = "=0.5.1"
 default-features = false
-path = "../../../mx-vm-executor-rs/vm-executor-wasmer"
+git = "https://github.com/xorewa/mx-vm-executor-rs"
+rev = "830f3efa2a1c8103424e4dd0c65b786e1f8305cf"
 
 [workspace]
 members = ["."]
 
 [patch.crates-io]
-multiversx-chain-vm-executor = { path = "../../../mx-vm-executor-rs/vm-executor" }
+multiversx-chain-vm-executor = { git = "https://github.com/xorewa/mx-vm-executor-rs", rev = "830f3efa2a1c8103424e4dd0c65b786e1f8305cf" }
