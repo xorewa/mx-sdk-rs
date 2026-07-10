@@ -8,11 +8,14 @@ use mrv_common::resolve_storage_version_upgrade;
 pub mod governance_proxy;
 pub mod income_distribution_proxy;
 
-/// Minimum epochs between funding and expiry. On the Dharitri chain each
-/// epoch is approximately 6 seconds (configurable per network), so 5 000
-/// epochs ≈ 8.3 hours — a conservative lower bound to prevent trivially
-/// short claim windows.
-const MINIMUM_CLAIM_WINDOW_EPOCHS: u64 = 5_000;
+/// Minimum epochs between funding and expiry for the target deployment.
+/// With four-hour epochs, 3 epochs is the smallest whole-epoch window above
+/// the previous eight-hour operational floor.
+const MINIMUM_CLAIM_WINDOW_EPOCHS: u64 = 3;
+
+/// Maximum epochs between funding and expiry for the target deployment.
+/// With four-hour epochs, 2,190 epochs is approximately one year.
+const MAXIMUM_CLAIM_WINDOW_EPOCHS: u64 = 2_190;
 
 /// Maximum allowed length (in bytes) for a distribution identifier to
 /// prevent storage-key bloat.
@@ -112,6 +115,13 @@ pub trait IncomeDistribution: mrv_common::MrvGovernanceModule {
         require!(
             expiry_epoch >= minimum_expiry_epoch,
             "expiry_epoch must be at least MINIMUM_CLAIM_WINDOW_EPOCHS from now"
+        );
+        let maximum_expiry_epoch = current_epoch
+            .checked_add(MAXIMUM_CLAIM_WINDOW_EPOCHS)
+            .unwrap_or_else(|| sc_panic!("expiry window overflow"));
+        require!(
+            expiry_epoch <= maximum_expiry_epoch,
+            "expiry_epoch exceeds MAXIMUM_CLAIM_WINDOW_EPOCHS from now"
         );
 
         require!(
@@ -392,6 +402,10 @@ pub trait IncomeDistribution: mrv_common::MrvGovernanceModule {
         require!(
             payment.token_identifier == self.come_token_id().get(),
             "must pay with COME token"
+        );
+        require!(
+            payment.token_nonce == 0,
+            "FUNGIBLE_ONLY: token nonce must be 0"
         );
         require!(payment.amount > 0u64, "must recover with positive amount");
         require!(

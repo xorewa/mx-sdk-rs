@@ -43,6 +43,9 @@ pub struct SettlementRecord<M: ManagedTypeApi> {
 /// `expired` states.
 /// Funding records the escrowed token amount and sets an expiry round.
 /// Execution transfers only the escrow recorded for the referenced settlement.
+/// `fundSettlement` uses `#[payable("*")]` because the accepted token is
+/// settlement-specific; the endpoint rejects any token other than the one
+/// recorded in the settlement instruction.
 #[multiversx_sc::contract]
 pub trait ComeSettlement: mrv_common::MrvGovernanceModule {
     #[init]

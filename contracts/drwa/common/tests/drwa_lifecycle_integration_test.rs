@@ -44,7 +44,6 @@ const ATTESTATION_CODE: MxscPath =
     MxscPath::new("mxsc:../../attestation/output/drwa-attestation.mxsc.json");
 
 const TOKEN_ID: &[u8] = b"CARBON-ab12cd";
-const POLICY_ID: &[u8] = TOKEN_ID;
 
 // ── World setup ────────────────────────────────────────────────────────
 
@@ -147,6 +146,8 @@ fn drwa_full_lifecycle_four_contracts() {
             true,  // metadata_protection_enabled
             investor_classes,
             jurisdictions,
+            false,
+            false,
         )
         .run();
 
@@ -271,7 +272,6 @@ fn drwa_full_lifecycle_four_contracts() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"CARBON_CREDIT"),
-            ManagedBuffer::from(POLICY_ID),
         )
         .run();
 
@@ -287,11 +287,6 @@ fn drwa_full_lifecycle_four_contracts() {
         asset.token_id,
         ManagedBuffer::<StaticApi>::from(TOKEN_ID),
         "asset token_id mismatch"
-    );
-    assert_eq!(
-        asset.policy_id,
-        ManagedBuffer::<StaticApi>::from(POLICY_ID),
-        "asset policy_id mismatch"
     );
     assert!(asset.regulated, "asset should be regulated");
     assert!(
@@ -316,6 +311,12 @@ fn drwa_full_lifecycle_four_contracts() {
             false,                              // transfer_locked
             false,                              // receive_locked
             false,                              // auditor_authorized (not yet attested)
+            0u64,
+            false,
+            false,
+            ManagedBuffer::new(),
+            ManagedBuffer::new(),
+            0u32,
         )
         .run();
 
@@ -429,7 +430,13 @@ fn drwa_full_lifecycle_four_contracts() {
             0u64,
             false,
             false,
-            false, // attestation-owned; asset-manager must not set this
+            false, // attestation-owned; asset-manager must not set this,
+            0u64,
+            false,
+            false,
+            ManagedBuffer::new(),
+            ManagedBuffer::new(),
+            0u32,
         )
         .run();
 
@@ -464,7 +471,7 @@ fn drwa_full_lifecycle_four_contracts() {
 
     // Policy: drwa_enabled=true, strict_auditor_mode=true
     // Identity: kyc=approved, aml=clear, investor_class=ACCREDITED, jurisdiction=SG
-    // Asset: regulated=true, policy_id equals token_id.
+    // Asset: regulated=true, keyed by token_id.
     // Mirror: kyc=approved, aml=clear, investor_class=ACCREDITED, jurisdiction=SG
     // Attestation: approved=true, type=MRV
 
@@ -526,6 +533,8 @@ fn drwa_lifecycle_deactivation_flow() {
             false,
             empty_classes,
             empty_jurisdictions,
+            false,
+            false,
         )
         .run();
 
@@ -554,7 +563,6 @@ fn drwa_lifecycle_deactivation_flow() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"BOND"),
-            ManagedBuffer::from(POLICY_ID),
         )
         .run();
 
@@ -760,6 +768,8 @@ fn drwa_lifecycle_cross_contract_auth_boundaries() {
             false,
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
+            false,
+            false,
         )
         .with_result(ExpectError(4, "caller not authorized"))
         .run();
@@ -790,7 +800,6 @@ fn drwa_lifecycle_cross_contract_auth_boundaries() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"BOND"),
-            ManagedBuffer::from(POLICY_ID),
         )
         .with_result(ExpectError(4, "caller not authorized"))
         .run();

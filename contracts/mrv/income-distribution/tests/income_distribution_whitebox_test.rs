@@ -116,7 +116,7 @@ fn deploy_and_fund_with_claim(
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -195,7 +195,7 @@ fn income_distribution_fund_distribution_rs() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest001"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -209,7 +209,7 @@ fn income_distribution_fund_distribution_rs() {
                 .unwrap();
             assert_eq!(dist.total_amount_scaled, BigUint::from(50_000u64));
             assert_eq!(dist.total_claimed_scaled, BigUint::zero());
-            assert_eq!(dist.expiry_epoch, 6_000u64);
+            assert_eq!(dist.expiry_epoch, 1_000u64);
             assert!(!dist.reclaimed);
             assert_eq!(
                 sc.distribution_escrow(&ManagedBuffer::from(b"dist-001"))
@@ -237,12 +237,12 @@ fn income_distribution_reclaim_expired_rs() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest002"),
-                6_000u64,
+                1_000u64,
             );
         });
 
     // Advance epoch past expiry
-    world.current_block().block_epoch(6_001u64);
+    world.current_block().block_epoch(1_001u64);
 
     world.tx().from(GOVERNANCE).to(SC_ADDRESS).whitebox(
         mrv_income_distribution::contract_obj,
@@ -298,7 +298,7 @@ fn income_distribution_claim_uses_distribution_escrow_not_global_balance_rs() {
                 ManagedBuffer::from(&dist_a_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafyescrowa"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -313,7 +313,7 @@ fn income_distribution_claim_uses_distribution_escrow_not_global_balance_rs() {
                 ManagedBuffer::from(&dist_b_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafyescrowb"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -371,12 +371,12 @@ fn income_distribution_reclaim_before_expiry_fails_rs() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest003"),
-                6_000u64,
+                1_000u64,
             );
         });
 
     // Epoch still within expiry window
-    world.current_block().block_epoch(5_999u64);
+    world.current_block().block_epoch(999u64);
 
     world
         .tx()
@@ -407,7 +407,7 @@ fn income_distribution_fund_with_wrong_token_fails_rs() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest004"),
-                6_000u64,
+                1_000u64,
             );
         });
 }
@@ -431,7 +431,7 @@ fn income_distribution_fund_with_nonzero_nonce_fails_rs() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest-nonce"),
-                6_000u64,
+                1_000u64,
             );
         });
 }
@@ -496,7 +496,7 @@ fn income_distribution_claim_with_valid_proof_rs() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest-claim-001"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -550,7 +550,7 @@ fn fund_distribution_empty_id_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 }
@@ -573,7 +573,7 @@ fn fund_distribution_bad_merkle_root_length_fails() {
                 ManagedBuffer::from(&[0xFFu8; 16][..]), // 16 bytes, not 32
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 }
@@ -596,7 +596,7 @@ fn fund_distribution_zero_merkle_root_fails() {
                 ManagedBuffer::from(&[0u8; 32][..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 }
@@ -621,18 +621,18 @@ fn fund_distribution_empty_manifest_cid_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::new(), // empty
-                6_000u64,
+                1_000u64,
             );
         });
 }
 
-// T5: fund_distribution_expiry_too_soon_fails — expiry < current + 5000
+// T5: fund_distribution_expiry_too_soon_fails — expiry < current + 3
 #[test]
 fn fund_distribution_expiry_too_soon_fails() {
     let mut world = world();
     deploy_income_distribution(&mut world);
 
-    // Set current epoch to 100 — expiry must be >= 5100
+    // Set current epoch to 100 — expiry must be >= 103
     world.current_block().block_epoch(100u64);
 
     let merkle_root: [u8; 32] = [0xAAu8; 32];
@@ -652,7 +652,36 @@ fn fund_distribution_expiry_too_soon_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                5_099u64, // current(100) + 5000 = 5100, so 5099 is too soon
+                102u64, // current(100) + 3 = 103, so 102 is too soon
+            );
+        });
+}
+
+#[test]
+fn fund_distribution_expiry_too_far_fails() {
+    let mut world = world();
+    deploy_income_distribution(&mut world);
+
+    world.current_block().block_epoch(100u64);
+
+    let merkle_root: [u8; 32] = [0xAAu8; 32];
+
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(SC_ADDRESS)
+        .payment(Payment::try_new(COME_TOKEN, 0, 10_000u64).unwrap())
+        .returns(ExpectError(
+            4u64,
+            "expiry_epoch exceeds MAXIMUM_CLAIM_WINDOW_EPOCHS from now",
+        ))
+        .whitebox(mrv_income_distribution::contract_obj, |sc| {
+            sc.fund_distribution(
+                ManagedBuffer::from(b"dist-too-far"),
+                ManagedBuffer::from(&merkle_root[..]),
+                100u64,
+                ManagedBuffer::from(b"bafymanifest"),
+                2_291u64, // current(100) + 2190 = 2290, so 2291 is too far
             );
         });
 }
@@ -677,7 +706,7 @@ fn fund_distribution_duplicate_id_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -694,7 +723,7 @@ fn fund_distribution_duplicate_id_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 }
@@ -851,7 +880,7 @@ fn claim_yield_expired_fails() {
         deploy_and_fund_with_claim(&mut world, b"dist-expired", holder, claim_amount, 50_000u64);
 
     // Advance past expiry
-    world.current_block().block_epoch(6_001u64);
+    world.current_block().block_epoch(1_001u64);
 
     world
         .tx()
@@ -905,7 +934,7 @@ fn claim_yield_reclaimed_fails() {
     );
 
     // Expire and reclaim
-    world.current_block().block_epoch(6_001u64);
+    world.current_block().block_epoch(1_001u64);
 
     world.tx().from(GOVERNANCE).to(SC_ADDRESS).whitebox(
         mrv_income_distribution::contract_obj,
@@ -915,7 +944,7 @@ fn claim_yield_reclaimed_fails() {
     );
 
     // Reset epoch so it's not expired (reclaimed check comes after expiry check)
-    world.current_block().block_epoch(5_000u64);
+    world.current_block().block_epoch(500u64);
 
     world
         .tx()
@@ -986,7 +1015,7 @@ fn claim_yield_already_claimed_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -1060,7 +1089,7 @@ fn claim_yield_invalid_proof_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -1135,7 +1164,7 @@ fn claim_yield_exceeds_funded_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -1216,7 +1245,7 @@ fn claim_yield_rejects_root_bound_to_different_distribution_total() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafytotalbound"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -1377,11 +1406,11 @@ fn reclaim_expired_already_reclaimed_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
-    world.current_block().block_epoch(6_001u64);
+    world.current_block().block_epoch(1_001u64);
 
     // First reclaim succeeds
     world.tx().from(GOVERNANCE).to(SC_ADDRESS).whitebox(
@@ -1422,7 +1451,7 @@ fn recover_shortfall_happy_path() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -1481,7 +1510,7 @@ fn recover_shortfall_no_shortfall_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -1518,7 +1547,7 @@ fn recover_shortfall_wrong_token_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -1542,6 +1571,48 @@ fn recover_shortfall_wrong_token_fails() {
         });
 }
 
+// T21b: recover_shortfall_nonzero_nonce_fails
+#[test]
+fn recover_shortfall_nonzero_nonce_fails() {
+    let mut world = world();
+    deploy_income_distribution(&mut world);
+
+    let merkle_root: [u8; 32] = [0xAAu8; 32];
+
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(SC_ADDRESS)
+        .payment(Payment::try_new(COME_TOKEN, 0, 10_000u64).unwrap())
+        .whitebox(mrv_income_distribution::contract_obj, |sc| {
+            sc.fund_distribution(
+                ManagedBuffer::from(b"dist-nonce-recover"),
+                ManagedBuffer::from(&merkle_root[..]),
+                100u64,
+                ManagedBuffer::from(b"bafymanifest"),
+                1_000u64,
+            );
+        });
+
+    world.tx().from(GOVERNANCE).to(SC_ADDRESS).whitebox(
+        mrv_income_distribution::contract_obj,
+        |sc| {
+            sc.reclaim_shortfall(&ManagedBuffer::from(b"dist-nonce-recover"))
+                .set(BigUint::from(5_000u64));
+        },
+    );
+
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(SC_ADDRESS)
+        .payment(Payment::try_new(COME_TOKEN, 1, 5_000u64).unwrap())
+        .returns(ExpectError(4u64, "FUNGIBLE_ONLY: token nonce must be 0"))
+        .whitebox(mrv_income_distribution::contract_obj, |sc| {
+            sc.recover_shortfall(ManagedBuffer::from(b"dist-nonce-recover"));
+        });
+}
+
 // T22: recover_shortfall_zero_amount_fails
 #[test]
 fn recover_shortfall_zero_amount_fails() {
@@ -1561,7 +1632,7 @@ fn recover_shortfall_zero_amount_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -1602,7 +1673,7 @@ fn recover_shortfall_exceeds_shortfall_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -1684,7 +1755,7 @@ fn is_claimed_true_after_claim() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 
@@ -1888,7 +1959,7 @@ fn fund_distribution_id_too_long_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 }
@@ -1939,7 +2010,7 @@ fn fund_distribution_unauthorized_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                6_000u64,
+                1_000u64,
             );
         });
 }
@@ -2023,7 +2094,7 @@ fn income_distribution_governance_pause_blocks_funding_and_claims_rs() {
                 ManagedBuffer::from(&paused_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest-paused"),
-                6_000u64,
+                1_000u64,
             );
         });
 

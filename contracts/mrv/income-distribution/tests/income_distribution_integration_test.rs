@@ -68,7 +68,7 @@ fn claim_yield_rejects_oversized_merkle_proof() {
             ManagedBuffer::from(&merkle_root[..]),
             100u64,
             ManagedBuffer::from("Qm-test-cid"),
-            100_000u64,
+            1_000u64,
         )
         .payment(EsdtTokenPayment::new(
             COME_TOKEN.to_esdt_token_identifier(),
@@ -135,7 +135,7 @@ fn fund_and_query_lifecycle() {
             ManagedBuffer::from(&merkle_root[..]),
             100u64,
             ManagedBuffer::from("Qm-lifecycle-cid"),
-            100_000u64,
+            1_000u64,
         )
         .payment(EsdtTokenPayment::new(
             COME_TOKEN.to_esdt_token_identifier(),

@@ -28,7 +28,9 @@
             "tx": {
                 "from": "address:owner",
                 "contractCode": "mxsc:../output/drwa-policy-registry.mxsc.json",
-                "arguments": ["address:owner"],
+                "arguments": [
+                    "address:owner"
+                ],
                 "gasLimit": "50,000,000",
                 "gasPrice": "0"
             },
@@ -54,7 +56,9 @@
                     "false",
                     "false",
                     "nested:str:ACCREDITED",
-                    "nested:str:SG"
+                    "nested:str:SG",
+                    "false",
+                    "false"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"
@@ -81,7 +85,9 @@
                     "true",
                     "true",
                     "nested:str:ACCREDITED",
-                    "nested:str:SG"
+                    "nested:str:SG",
+                    "false",
+                    "false"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"
@@ -108,7 +114,9 @@
                     "true",
                     "true",
                     "nested:str:ACCREDITED",
-                    "nested:str:SG"
+                    "nested:str:SG",
+                    "false",
+                    "false"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"
@@ -126,10 +134,14 @@
             "tx": {
                 "to": "sc:drwa_policy_registry",
                 "function": "getTokenPolicyVersion",
-                "arguments": ["str:CARBON-a11001"]
+                "arguments": [
+                    "str:CARBON-a11001"
+                ]
             },
             "expect": {
-                "out": ["1"],
+                "out": [
+                    "1"
+                ],
                 "status": "0"
             }
         },
@@ -139,10 +151,14 @@
             "tx": {
                 "to": "sc:drwa_policy_registry",
                 "function": "getTokenPolicyVersion",
-                "arguments": ["str:CARBON-bc23de"]
+                "arguments": [
+                    "str:CARBON-bc23de"
+                ]
             },
             "expect": {
-                "out": ["1"],
+                "out": [
+                    "1"
+                ],
                 "status": "0"
             }
         },
@@ -152,10 +168,14 @@
             "tx": {
                 "to": "sc:drwa_policy_registry",
                 "function": "getTokenPolicyVersion",
-                "arguments": ["str:CARBON-be7a01"]
+                "arguments": [
+                    "str:CARBON-be7a01"
+                ]
             },
             "expect": {
-                "out": ["1"],
+                "out": [
+                    "1"
+                ],
                 "status": "0"
             }
         },
@@ -173,7 +193,9 @@
                     "false",
                     "false",
                     "nested:str:RETAIL",
-                    "nested:str:US"
+                    "nested:str:US",
+                    "false",
+                    "false"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"

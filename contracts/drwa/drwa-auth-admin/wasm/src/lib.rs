@@ -6,9 +6,9 @@
 
 // Init:                                 1
 // Upgrade:                              1
-// Endpoints:                           27
+// Endpoints:                           29
 // Async Callback (empty):               1
-// Total number of exported functions:  30
+// Total number of exported functions:  32
 
 #![no_std]
 
@@ -38,6 +38,8 @@ multiversx_sc_wasm_adapter::endpoints! {
         getActionExpiryRound => action_expiry_round
         getActionApprovedAtRound => action_approved_at_round
         getActionTimelockRounds => action_timelock_rounds
+        getActionApprovedAtTimestampSeconds => action_approved_at_timestamp_seconds
+        getActionTimelockSeconds => action_timelock_seconds
         getAllSigners => signers
         getActionSigners => action_signers
         getStorageVersion => storage_version

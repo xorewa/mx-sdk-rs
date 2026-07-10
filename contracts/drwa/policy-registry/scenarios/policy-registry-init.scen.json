@@ -27,7 +27,9 @@
             "tx": {
                 "from": "address:owner",
                 "contractCode": "mxsc:../output/drwa-policy-registry.mxsc.json",
-                "arguments": ["address:owner"],
+                "arguments": [
+                    "address:owner"
+                ],
                 "gasLimit": "50,000,000",
                 "gasPrice": "0"
             },
@@ -52,7 +54,9 @@
                     "true",
                     "true",
                     "nested:str:ACCREDITED",
-                    "nested:str:SG"
+                    "nested:str:SG",
+                    "false",
+                    "false"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"
@@ -78,7 +82,9 @@
                     "true",
                     "true",
                     "nested:str:ACCREDITED",
-                    "nested:str:SG"
+                    "nested:str:SG",
+                    "false",
+                    "false"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"
@@ -96,10 +102,14 @@
             "tx": {
                 "to": "sc:drwa_policy_registry",
                 "function": "getTokenPolicyVersion",
-                "arguments": ["str:CARBON-ab12cd"]
+                "arguments": [
+                    "str:CARBON-ab12cd"
+                ]
             },
             "expect": {
-                "out": ["2"],
+                "out": [
+                    "2"
+                ],
                 "status": "0"
             }
         },
@@ -117,7 +127,9 @@
                     "false",
                     "false",
                     "nested:str:RETAIL",
-                    "nested:str:US"
+                    "nested:str:US",
+                    "false",
+                    "false"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"

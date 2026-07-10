@@ -65,7 +65,6 @@ fn asset_manager_gas_smoke_for_register_and_sync() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"Hospitality"),
-            ManagedBuffer::from(b"policy-gas"),
         )
         .returns(ReturnsGasUsed)
         .run();
@@ -87,6 +86,12 @@ fn asset_manager_gas_smoke_for_register_and_sync() {
             false,
             false,
             false,
+            0u64,
+            false,
+            false,
+            ManagedBuffer::new(),
+            ManagedBuffer::new(),
+            0u32,
         )
         .returns(ReturnsGasUsed)
         .run();
@@ -127,7 +132,6 @@ fn asset_manager_gas_smoke_diagnostics() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"Hospitality"),
-            ManagedBuffer::from(b"policy-gas"),
         )
         .returns(ReturnsStatus)
         .returns(ReturnsMessage)
@@ -150,6 +154,12 @@ fn asset_manager_gas_smoke_diagnostics() {
             false,
             false,
             false,
+            0u64,
+            false,
+            false,
+            ManagedBuffer::new(),
+            ManagedBuffer::new(),
+            0u32,
         )
         .returns(ReturnsStatus)
         .returns(ReturnsMessage)

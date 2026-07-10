@@ -45,6 +45,8 @@ fn policy_registry_upgrade_preserves_policy_and_storage_version() {
             true,
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
+            false,
+            false,
         )
         .run();
 

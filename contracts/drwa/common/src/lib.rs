@@ -90,7 +90,7 @@ pub fn invoke_drwa_native_governance_query<M: ManagedTypeApi>(
 ) -> OptionalValue<ManagedBuffer<M>> {
     #[cfg(target_arch = "wasm32")]
     unsafe {
-        let mut result: ManagedBuffer<M> = ManagedBuffer::new();
+        let result: ManagedBuffer<M> = ManagedBuffer::new();
         let rc = managedDRWANativeGovernanceQuery(
             query_type,
             key.get_handle().get_raw_handle(),
@@ -259,6 +259,8 @@ pub struct DrwaTokenPolicy<M: ManagedTypeApi> {
     pub token_policy_version: u64,
     pub allowed_investor_classes: ManagedVec<M, ManagedBuffer<M>>,
     pub allowed_jurisdictions: ManagedVec<M, ManagedBuffer<M>>,
+    pub travel_rule_required: bool,
+    pub sanctions_screening_enabled: bool,
 }
 
 /// Per-holder, per-token compliance state mirrored to the native DRWA layer.
@@ -276,6 +278,12 @@ pub struct DrwaHolderMirror<M: ManagedTypeApi> {
     pub transfer_locked: bool,
     pub receive_locked: bool,
     pub auditor_authorized: bool,
+    pub lock_until_round: u64,
+    pub travel_rule_attested: bool,
+    pub sanctions_cleared: bool,
+    pub sanctions_screening_cid: ManagedBuffer<M>,
+    pub ubo_parent_entity: ManagedBuffer<M>,
+    pub ownership_pct: u32,
 }
 
 /// Per-holder identity profile mirrored to the native DRWA layer.

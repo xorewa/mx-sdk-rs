@@ -52,6 +52,8 @@ fn policy_registry_init_rs() {
                 true,
                 investor_classes,
                 jurisdictions,
+                false,
+                false,
             );
 
             assert!(envelope.caller_domain == DrwaCallerDomain::PolicyRegistry);
@@ -96,6 +98,8 @@ fn policy_registry_denial_signals_rs() {
                 true,
                 investor_classes,
                 jurisdictions,
+                false,
+                false,
             );
 
             assert_eq!(envelope.operations.get(0).version, 1);

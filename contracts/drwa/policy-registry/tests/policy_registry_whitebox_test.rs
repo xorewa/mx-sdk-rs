@@ -55,6 +55,8 @@ fn policy_registry_whitebox_flow() {
                 true,
                 investor_classes,
                 jurisdictions,
+                false,
+                false,
             );
 
             assert!(envelope.caller_domain == DrwaCallerDomain::PolicyRegistry);
@@ -63,6 +65,10 @@ fn policy_registry_whitebox_flow() {
             let operation = envelope.operations.get(0);
             assert!(operation.operation_type == DrwaSyncOperationType::TokenPolicy);
             assert_eq!(operation.version, 1);
+            let body = operation.body.to_boxed_bytes();
+            let body_str = core::str::from_utf8(body.as_slice()).unwrap();
+            assert!(body_str.contains("\"travel_rule_required\":false"));
+            assert!(body_str.contains("\"sanctions_screening_enabled\":false"));
             assert!(!envelope.payload_hash.is_empty());
         });
 
@@ -77,6 +83,30 @@ fn policy_registry_whitebox_flow() {
             assert!(policy.metadata_protection_enabled);
             assert_eq!(policy.token_policy_version, 1);
             assert_eq!(sc.token_policy_version(&token_id).get(), 1);
+        });
+
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(SC_ADDRESS)
+        .whitebox(drwa_policy_registry::contract_obj, |sc| {
+            let envelope = sc.set_token_policy(
+                ManagedBuffer::from(TOKEN_ID_2),
+                true,
+                false,
+                false,
+                false,
+                ManagedVec::new(),
+                ManagedVec::new(),
+                true,
+                true,
+            );
+
+            let operation = envelope.operations.get(0);
+            let body = operation.body.to_boxed_bytes();
+            let body_str = core::str::from_utf8(body.as_slice()).unwrap();
+            assert!(body_str.contains("\"travel_rule_required\":true"));
+            assert!(body_str.contains("\"sanctions_screening_enabled\":true"));
         });
 }
 
@@ -111,6 +141,8 @@ fn policy_registry_sync_hook_failure_reverts_policy_update() {
                 true,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
         });
     set_drwa_sync_hook_test_result(0);
@@ -159,6 +191,8 @@ fn policy_registry_increments_version_and_rejects_non_owner() {
                     true,
                     investor_classes,
                     jurisdictions,
+                    false,
+                    false,
                 );
                 assert_eq!(envelope.operations.get(0).version, version);
             },
@@ -205,6 +239,8 @@ fn policy_registry_persists_explicit_drwa_enabled_state() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
             assert_eq!(envelope.operations.get(0).version, 1);
         });
@@ -264,6 +300,8 @@ fn policy_registry_allows_governance_to_set_policy() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
             assert_eq!(envelope.operations.get(0).version, 1);
         });
@@ -338,6 +376,8 @@ fn policy_registry_rejects_invalid_token_id_format() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
         });
 }
@@ -380,6 +420,8 @@ fn policy_registry_rejects_too_many_investor_classes() {
                 false,
                 investor_classes,
                 ManagedVec::new(),
+                false,
+                false,
             );
         });
 }
@@ -422,6 +464,8 @@ fn policy_registry_rejects_too_many_jurisdictions() {
                 false,
                 ManagedVec::new(),
                 jurisdictions,
+                false,
+                false,
             );
         });
 }
@@ -462,6 +506,8 @@ fn policy_registry_rejects_unsafe_json_key() {
                 false,
                 investor_classes,
                 ManagedVec::new(),
+                false,
+                false,
             );
         });
 }
@@ -496,6 +542,8 @@ fn policy_registry_deactivate_token_policy() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
         });
 
@@ -591,6 +639,8 @@ fn assert_json_injection_rejected(
                     false,
                     investor_classes,
                     ManagedVec::new(),
+                    false,
+                    false,
                 );
             });
     }
@@ -629,6 +679,8 @@ fn assert_json_injection_rejected(
                     false,
                     ManagedVec::new(),
                     jurisdictions,
+                    false,
+                    false,
                 );
             });
     }
@@ -747,6 +799,8 @@ fn policy_json_injection_empty_key_rejected() {
                 false,
                 investor_classes,
                 ManagedVec::new(),
+                false,
+                false,
             );
         });
 }
@@ -783,6 +837,8 @@ fn policy_json_injection_empty_jurisdiction_key_rejected() {
                 false,
                 ManagedVec::new(),
                 jurisdictions,
+                false,
+                false,
             );
         });
 }
@@ -830,6 +886,8 @@ fn policy_registry_owner_cannot_bypass_configured_governance() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
             assert_eq!(envelope.operations.get(0).version, 1);
         });
@@ -858,6 +916,8 @@ fn policy_registry_owner_cannot_bypass_configured_governance() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
             assert_eq!(envelope.operations.get(0).version, 1);
         });
@@ -1099,6 +1159,8 @@ fn mica_white_paper_cid_increments_version() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
         });
 
@@ -1158,6 +1220,8 @@ fn mica_registration_status_increments_version() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
         });
 
@@ -1240,6 +1304,8 @@ fn policy_registry_identical_registration_status_is_noop() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
             let envelope = sc.set_registration_status(
                 ManagedBuffer::from(TOKEN_ID_1),
@@ -1283,6 +1349,8 @@ fn mica_registration_status_sync_preserves_existing_white_paper_cid() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
             sc.set_white_paper_cid(
                 ManagedBuffer::from(TOKEN_ID_1),
@@ -1319,7 +1387,9 @@ fn mica_white_paper_sync_preserves_existing_registration_status() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
-            );
+                            false,
+                false,
+);
             sc.set_registration_status(
                 ManagedBuffer::from(TOKEN_ID_1),
                 ManagedBuffer::from(b"draft"),
@@ -1378,6 +1448,8 @@ fn policy_json_safe_keys_accepted() {
                 false,
                 investor_classes,
                 jurisdictions,
+                false,
+                false,
             );
         });
 }

@@ -469,6 +469,8 @@ async fn cs_drwa_policy_version_tracking() {
             true,  // metadata_protection_enabled
             empty_classes.clone(),
             empty_jurisdictions.clone(),
+            false,
+            false,
         )
         .returns(ReturnsResultUnmanaged)
         .run()
@@ -505,6 +507,8 @@ async fn cs_drwa_policy_version_tracking() {
             true, // metadata_protection_enabled
             empty_classes,
             empty_jurisdictions,
+            false,
+            false,
         )
         .returns(ReturnsResultUnmanaged)
         .run()

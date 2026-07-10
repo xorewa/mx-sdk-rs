@@ -9,7 +9,7 @@ use drwa_policy_registry::drwa_policy_registry_proxy::DrwaPolicyRegistryProxy;
 
 use drwa_common::{
     DrwaCallerDomain, DrwaHolderMirror, DrwaSyncEnvelope, DrwaSyncOperation, DrwaSyncOperationType,
-    push_len_prefixed, require_valid_aml_status, require_valid_kyc_status, require_valid_token_id,
+    require_valid_aml_status, require_valid_kyc_status, require_valid_token_id,
 };
 
 const POLICY_REGISTRY_READ_GAS_BUDGET: u64 = 20_000_000;
@@ -30,7 +30,6 @@ pub struct AssetRecord<M: ManagedTypeApi> {
     pub token_id: ManagedBuffer<M>,
     pub carrier_type: ManagedBuffer<M>,
     pub asset_class: ManagedBuffer<M>,
-    pub policy_id: ManagedBuffer<M>,
     pub regulated: bool,
     pub policy_version_at_register: u64,
     /// MiCA orderly wind-down flag. Once true, the Go transfer gate restricts
@@ -87,6 +86,12 @@ pub struct HolderComplianceEventPayload<M: ManagedTypeApi> {
     pub transfer_locked: bool,
     pub receive_locked: bool,
     pub auditor_authorized: bool,
+    pub lock_until_round: u64,
+    pub travel_rule_attested: bool,
+    pub sanctions_cleared: bool,
+    pub sanctions_screening_cid: ManagedBuffer<M>,
+    pub ubo_parent_entity: ManagedBuffer<M>,
+    pub ownership_pct: u32,
 }
 
 /// Manages regulated asset registration and per-holder, per-token compliance
@@ -130,12 +135,10 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
         token_id: ManagedBuffer,
         carrier_type: ManagedBuffer,
         asset_class: ManagedBuffer,
-        policy_id: ManagedBuffer,
     ) -> DrwaSyncEnvelope<Self::Api> {
         self.require_governance_or_owner();
 
         self.require_valid_token_id(&token_id);
-        self.require_policy_id_matches_token_id(&policy_id, &token_id);
         let policy_version_at_register = self.require_token_policy_registered(&token_id);
         require!(
             self.asset(&token_id).is_empty(),
@@ -146,13 +149,12 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
             token_id: token_id.clone(),
             carrier_type,
             asset_class,
-            policy_id: policy_id.clone(),
             regulated: true,
             policy_version_at_register,
             wind_down_initiated: false,
             wind_down_round: 0,
         });
-        self.drwa_asset_registered_event(&token_id, &policy_id, true);
+        self.drwa_asset_registered_event(&token_id, true);
 
         let next_version = self
             .asset_record_version(&token_id)
@@ -161,14 +163,10 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
             .unwrap_or_else(|| sc_panic!("version overflow"));
         self.asset_record_version(&token_id).set(next_version);
 
-        // Format discriminator byte 0x00 = delimiter format (token_id:policy_id).
-        // The Go-side decoder reads byte[0] to select the parser:
-        //   0x00 = delimiter format, 0x01 = JSON format (used by wind-down).
+        // Format discriminator byte 0x00 = asset registration/update marker.
+        // Native sync stores this body opaquely; wind-down uses JSON format.
         let mut body = ManagedBuffer::new();
-        body.append_bytes(&[0x00u8]); // delimiter format discriminator
-        body.append(&token_id);
-        body.append_bytes(b":");
-        body.append(&policy_id);
+        body.append_bytes(&[0x00u8]);
 
         let mut operations = ManagedVec::new();
         operations.push(DrwaSyncOperation {
@@ -260,6 +258,12 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
         transfer_locked: bool,
         receive_locked: bool,
         auditor_authorized: bool,
+        lock_until_round: u64,
+        travel_rule_attested: bool,
+        sanctions_cleared: bool,
+        sanctions_screening_cid: ManagedBuffer,
+        ubo_parent_entity: ManagedBuffer,
+        ownership_pct: u32,
     ) -> DrwaSyncEnvelope<Self::Api> {
         self.require_governance_or_owner();
         require!(!holder.is_zero(), "ZERO_ADDRESS: holder must not be zero");
@@ -306,7 +310,12 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
             expiry_round == 0 || expiry_round > current_round,
             "expiry_round must be in the future or 0 for permanent"
         );
-
+        require!(
+            lock_until_round == 0 || lock_until_round > current_round,
+            "lock_until_round must be in the future or 0"
+        );
+        self.require_json_safe_optional_cid(&sanctions_screening_cid, 256);
+        self.require_json_safe_optional_identifier(&ubo_parent_entity, 128);
         if !self.holder_mirror(&token_id, &holder).is_empty() {
             let current = self.holder_mirror(&token_id, &holder).get();
             if current.kyc_status == kyc_status
@@ -317,6 +326,12 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
                 && current.transfer_locked == transfer_locked
                 && current.receive_locked == receive_locked
                 && current.auditor_authorized == auditor_authorized
+                && current.lock_until_round == lock_until_round
+                && current.travel_rule_attested == travel_rule_attested
+                && current.sanctions_cleared == sanctions_cleared
+                && current.sanctions_screening_cid == sanctions_screening_cid
+                && current.ubo_parent_entity == ubo_parent_entity
+                && current.ownership_pct == ownership_pct
             {
                 return self.emit_sync_noop_envelope(DrwaCallerDomain::AssetManager);
             }
@@ -338,6 +353,12 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
             transfer_locked,
             receive_locked,
             auditor_authorized,
+            lock_until_round,
+            travel_rule_attested,
+            sanctions_cleared,
+            sanctions_screening_cid,
+            ubo_parent_entity,
+            ownership_pct,
         };
 
         self.holder_mirror(&token_id, &holder).set(mirror.clone());
@@ -357,6 +378,12 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
                 transfer_locked: mirror.transfer_locked,
                 receive_locked: mirror.receive_locked,
                 auditor_authorized: mirror.auditor_authorized,
+                lock_until_round: mirror.lock_until_round,
+                travel_rule_attested: mirror.travel_rule_attested,
+                sanctions_cleared: mirror.sanctions_cleared,
+                sanctions_screening_cid: mirror.sanctions_screening_cid.clone(),
+                ubo_parent_entity: mirror.ubo_parent_entity.clone(),
+                ownership_pct: mirror.ownership_pct,
             },
         );
 
@@ -373,8 +400,8 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
         self.emit_sync_envelope(DrwaCallerDomain::AssetManager, operations)
     }
 
-    /// Updates the carrier_type, asset_class, and policy_id of an existing
-    /// registered asset and syncs the updated record to the native mirror.
+    /// Updates the carrier_type and asset_class of an existing registered
+    /// asset and syncs the updated record to the native mirror.
     /// Does not re-register or change the `regulated` flag.
     ///
     /// Access is limited to the governance address or the contract owner.
@@ -385,11 +412,9 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
         token_id: ManagedBuffer,
         carrier_type: ManagedBuffer,
         asset_class: ManagedBuffer,
-        policy_id: ManagedBuffer,
     ) -> DrwaSyncEnvelope<Self::Api> {
         self.require_governance_or_owner();
         self.require_valid_token_id(&token_id);
-        self.require_policy_id_matches_token_id(&policy_id, &token_id);
         require!(
             !self.asset(&token_id).is_empty(),
             "asset not registered: use registerAsset first"
@@ -397,21 +422,16 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
         self.require_token_policy_registered(&token_id);
 
         let current = self.asset(&token_id).get();
-        if current.carrier_type == carrier_type
-            && current.asset_class == asset_class
-            && current.policy_id == policy_id
-        {
+        if current.carrier_type == carrier_type && current.asset_class == asset_class {
             return self.emit_sync_noop_envelope(DrwaCallerDomain::AssetManager);
         }
 
         self.asset(&token_id).update(|record| {
             record.carrier_type = carrier_type;
             record.asset_class = asset_class;
-            record.policy_id = policy_id;
         });
 
-        let record = self.asset(&token_id).get();
-        self.drwa_asset_updated_event(&token_id, &record.policy_id);
+        self.drwa_asset_updated_event(&token_id);
 
         let next_version = self
             .asset_record_version(&token_id)
@@ -420,12 +440,9 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
             .unwrap_or_else(|| sc_panic!("version overflow"));
         self.asset_record_version(&token_id).set(next_version);
 
-        // Format discriminator byte 0x00 = delimiter format (token_id:policy_id).
+        // Format discriminator byte 0x00 = asset registration/update marker.
         let mut body = ManagedBuffer::new();
-        body.append_bytes(&[0x00u8]); // delimiter format discriminator
-        body.append(&token_id);
-        body.append_bytes(b":");
-        body.append(&record.policy_id);
+        body.append_bytes(&[0x00u8]);
 
         let mut operations = ManagedVec::new();
         operations.push(DrwaSyncOperation {
@@ -667,17 +684,12 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
     fn drwa_asset_registered_event(
         &self,
         #[indexed] token_id: &ManagedBuffer,
-        #[indexed] policy_id: &ManagedBuffer,
         #[indexed] regulated: bool,
     );
 
     /// Emits when an asset record is updated.
     #[event("drwaAssetUpdated")]
-    fn drwa_asset_updated_event(
-        &self,
-        #[indexed] token_id: &ManagedBuffer,
-        #[indexed] policy_id: &ManagedBuffer,
-    );
+    fn drwa_asset_updated_event(&self, #[indexed] token_id: &ManagedBuffer);
 
     #[event("drwaPolicyRegistryAddressSet")]
     fn drwa_policy_registry_address_set_event(&self, #[indexed] policy_registry: &ManagedAddress);
@@ -698,25 +710,59 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
         payload: &HolderComplianceEventPayload<Self::Api>,
     );
 
-    /// Serializes holder compliance data in the binary field order consumed by
-    /// the native mirror.
+    /// Serializes holder compliance data as JSON consumed by the native mirror.
+    ///
+    /// Holder mirrors used to use a compact binary body. ISSUE-158 moves this
+    /// body to JSON because the native binary decoder intentionally rejects
+    /// trailing bytes, while JSON already supports the extension fields.
     fn serialize_holder(
         &self,
         holder: &DrwaHolderMirror<Self::Api>,
         policy_version_evaluated: u64,
     ) -> ManagedBuffer {
-        let mut result = ManagedBuffer::new();
-        result.append_bytes(&holder.holder_policy_version.to_be_bytes());
-        push_len_prefixed(&mut result, &holder.kyc_status);
-        push_len_prefixed(&mut result, &holder.aml_status);
-        push_len_prefixed(&mut result, &holder.investor_class);
-        push_len_prefixed(&mut result, &holder.jurisdiction_code);
-        result.append_bytes(&holder.expiry_round.to_be_bytes());
-        result.append_bytes(&[holder.transfer_locked as u8]);
-        result.append_bytes(&[holder.receive_locked as u8]);
-        result.append_bytes(&[holder.auditor_authorized as u8]);
-        result.append_bytes(&policy_version_evaluated.to_be_bytes());
-        result
+        let mut body = ManagedBuffer::new();
+        body.append_bytes(b"{\"holder_policy_version\":");
+        self.append_u64_decimal(&mut body, holder.holder_policy_version);
+        body.append_bytes(b",\"kyc_status\":\"");
+        body.append(&holder.kyc_status);
+        body.append_bytes(b"\",\"aml_status\":\"");
+        body.append(&holder.aml_status);
+        body.append_bytes(b"\",\"investor_class\":\"");
+        body.append(&holder.investor_class);
+        body.append_bytes(b"\",\"jurisdiction_code\":\"");
+        body.append(&holder.jurisdiction_code);
+        body.append_bytes(b"\",\"expiry_round\":");
+        self.append_u64_decimal(&mut body, holder.expiry_round);
+        body.append_bytes(b",\"transfer_locked\":");
+        self.append_bool_json(&mut body, holder.transfer_locked);
+        body.append_bytes(b",\"receive_locked\":");
+        self.append_bool_json(&mut body, holder.receive_locked);
+        body.append_bytes(b",\"auditor_authorized\":");
+        self.append_bool_json(&mut body, holder.auditor_authorized);
+        body.append_bytes(b",\"policy_version_evaluated\":");
+        self.append_u64_decimal(&mut body, policy_version_evaluated);
+        body.append_bytes(b",\"lock_until_round\":");
+        self.append_u64_decimal(&mut body, holder.lock_until_round);
+        body.append_bytes(b",\"travel_rule_attested\":");
+        self.append_bool_json(&mut body, holder.travel_rule_attested);
+        body.append_bytes(b",\"sanctions_cleared\":");
+        self.append_bool_json(&mut body, holder.sanctions_cleared);
+        body.append_bytes(b",\"sanctions_screening_cid\":\"");
+        body.append(&holder.sanctions_screening_cid);
+        body.append_bytes(b"\",\"ubo_parent_entity\":\"");
+        body.append(&holder.ubo_parent_entity);
+        body.append_bytes(b"\",\"ownership_pct\":");
+        self.append_u32_decimal(&mut body, holder.ownership_pct);
+        body.append_bytes(b"}");
+        body
+    }
+
+    fn append_bool_json(&self, body: &mut ManagedBuffer, value: bool) {
+        body.append_bytes(if value { b"true" } else { b"false" });
+    }
+
+    fn append_u32_decimal(&self, body: &mut ManagedBuffer, value: u32) {
+        self.append_u64_decimal(body, value as u64);
     }
 
     /// Validates the token identifier format accepted by this contract.
@@ -752,6 +798,43 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
                     || b == b':'
                     || b == b'/',
                 "WIND_DOWN_EVIDENCE_INVALID"
+            );
+        }
+    }
+
+    fn require_json_safe_optional_cid(&self, value: &ManagedBuffer, max_len: usize) {
+        let len = value.len();
+        require!(len <= max_len, "sanctions_screening_cid is too long");
+        if len == 0 {
+            return;
+        }
+        let mut bytes = [0u8; 256];
+        value.load_slice(0, &mut bytes[..len]);
+        for &b in &bytes[..len] {
+            require!(
+                b.is_ascii_alphanumeric()
+                    || b == b'.'
+                    || b == b'_'
+                    || b == b'-'
+                    || b == b':'
+                    || b == b'/',
+                "sanctions_screening_cid contains invalid characters"
+            );
+        }
+    }
+
+    fn require_json_safe_optional_identifier(&self, value: &ManagedBuffer, max_len: usize) {
+        let len = value.len();
+        require!(len <= max_len, "ubo_parent_entity is too long");
+        if len == 0 {
+            return;
+        }
+        let mut bytes = [0u8; 128];
+        value.load_slice(0, &mut bytes[..len]);
+        for &b in &bytes[..len] {
+            require!(
+                b.is_ascii_alphanumeric() || b == b'.' || b == b'_' || b == b'-' || b == b':',
+                "ubo_parent_entity contains invalid characters"
             );
         }
     }
@@ -847,22 +930,6 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
         if current < 1u32 {
             self.storage_version().set(1u32);
         }
-    }
-
-    fn require_policy_id_matches_token_id(
-        &self,
-        policy_id: &ManagedBuffer,
-        token_id: &ManagedBuffer,
-    ) {
-        let len = policy_id.len();
-        require!(len <= 128, "policy_id is too long");
-        let mut bytes = [0u8; 128];
-        policy_id.load_slice(0, &mut bytes[..len]);
-        require!(
-            !bytes[..len].contains(&b':'),
-            "policy_id must not contain ':'"
-        );
-        require!(policy_id == token_id, "policy_id must equal token_id");
     }
 
     fn require_token_policy_registered(&self, token_id: &ManagedBuffer) -> u64 {

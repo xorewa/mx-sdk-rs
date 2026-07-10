@@ -45,6 +45,8 @@ pub trait DrwaPolicyRegistry: drwa_common::DrwaGovernanceModule {
         metadata_protection_enabled: bool,
         allowed_investor_classes: ManagedVec<ManagedBuffer>,
         allowed_jurisdictions: ManagedVec<ManagedBuffer>,
+        travel_rule_required: bool,
+        sanctions_screening_enabled: bool,
     ) -> DrwaSyncEnvelope<Self::Api> {
         self.require_governance_or_owner();
 
@@ -68,6 +70,8 @@ pub trait DrwaPolicyRegistry: drwa_common::DrwaGovernanceModule {
                 token_policy_version: current.token_policy_version,
                 allowed_investor_classes: allowed_investor_classes.clone(),
                 allowed_jurisdictions: allowed_jurisdictions.clone(),
+                travel_rule_required,
+                sanctions_screening_enabled,
             };
             if current == requested {
                 return self.emit_sync_noop_envelope(DrwaCallerDomain::PolicyRegistry);
@@ -88,6 +92,8 @@ pub trait DrwaPolicyRegistry: drwa_common::DrwaGovernanceModule {
             token_policy_version: next_version,
             allowed_investor_classes,
             allowed_jurisdictions,
+            travel_rule_required,
+            sanctions_screening_enabled,
         };
 
         self.token_policy(&token_id).set(policy.clone());
@@ -98,6 +104,8 @@ pub trait DrwaPolicyRegistry: drwa_common::DrwaGovernanceModule {
             policy.global_pause,
             policy.strict_auditor_mode,
             next_version,
+            policy.travel_rule_required,
+            policy.sanctions_screening_enabled,
         );
 
         let body = self.serialize_policy_json(&policy);
@@ -148,6 +156,8 @@ pub trait DrwaPolicyRegistry: drwa_common::DrwaGovernanceModule {
             policy.global_pause,
             policy.strict_auditor_mode,
             next_version,
+            policy.travel_rule_required,
+            policy.sanctions_screening_enabled,
         );
 
         let body = self.serialize_policy_json(&policy);
@@ -186,6 +196,8 @@ pub trait DrwaPolicyRegistry: drwa_common::DrwaGovernanceModule {
         #[indexed] global_pause: bool,
         #[indexed] strict_auditor_mode: bool,
         #[indexed] token_policy_version: u64,
+        #[indexed] travel_rule_required: bool,
+        #[indexed] sanctions_screening_enabled: bool,
     );
 
     // ── MiCA White Paper CID & Registration Status ──────────────────────
@@ -378,6 +390,8 @@ pub trait DrwaPolicyRegistry: drwa_common::DrwaGovernanceModule {
                 token_policy_version: 0,
                 allowed_investor_classes: ManagedVec::new(),
                 allowed_jurisdictions: ManagedVec::new(),
+                travel_rule_required: false,
+                sanctions_screening_enabled: false,
             }
         };
         let resolved_white_paper_cid = match white_paper_cid {
@@ -513,6 +527,18 @@ pub trait DrwaPolicyRegistry: drwa_common::DrwaGovernanceModule {
         });
         body.append_bytes(b",\"token_policy_version\":");
         self.append_u64_decimal(&mut body, policy.token_policy_version);
+        body.append_bytes(b",\"travel_rule_required\":");
+        body.append_bytes(if policy.travel_rule_required {
+            b"true"
+        } else {
+            b"false"
+        });
+        body.append_bytes(b",\"sanctions_screening_enabled\":");
+        body.append_bytes(if policy.sanctions_screening_enabled {
+            b"true"
+        } else {
+            b"false"
+        });
         if !policy.allowed_investor_classes.is_empty() {
             body.append_bytes(b",\"allowed_investor_classes\":{");
             let mut first = true;

@@ -279,6 +279,8 @@ impl DrwaInteractor {
                 false,             // metadata_protection_enabled
                 empty_vec.clone(), // allowed_investor_classes (empty = all)
                 empty_vec,         // allowed_jurisdictions (empty = all)
+                false,             // travel_rule_required
+                false,             // sanctions_screening_enabled
             )
             .run()
             .await;
@@ -298,14 +300,20 @@ impl DrwaInteractor {
             .sync_holder_compliance(
                 token_id,
                 holder_address.to_address(),
-                "approved",  // kyc_status
-                "clear",     // aml_status
-                "qualified", // investor_class
-                "US",        // jurisdiction_code
-                0u64,        // expiry_round (permanent)
-                false,       // transfer_locked
-                false,       // receive_locked
-                false,       // auditor_authorized
+                "approved",           // kyc_status
+                "clear",              // aml_status
+                "qualified",          // investor_class
+                "US",                 // jurisdiction_code
+                0u64,                 // expiry_round (permanent)
+                false,                // transfer_locked
+                false,                // receive_locked
+                false,                // auditor_authorized
+                0u64,                 // lock_until_round
+                false,                // travel_rule_attested
+                false,                // sanctions_cleared
+                ManagedBuffer::new(), // sanctions_screening_cid
+                ManagedBuffer::new(), // ubo_parent_entity
+                0u32,                 // ownership_pct
             )
             .run()
             .await;
@@ -325,7 +333,7 @@ impl DrwaInteractor {
             .to(&asset_manager)
             .gas(CALL_GAS)
             .typed(drwa_asset_manager_proxy::DrwaAssetManagerProxy)
-            .register_asset(token_id, "fungible", "security", "policy-001")
+            .register_asset(token_id, "fungible", "security")
             .returns(ReturnsHandledOrError::new())
             .run()
             .await;
@@ -407,6 +415,8 @@ impl DrwaInteractor {
                 true,  // metadata_protection_enabled
                 empty_vec.clone(),
                 empty_vec,
+                false,
+                false,
             )
             .run()
             .await;
@@ -427,14 +437,20 @@ impl DrwaInteractor {
             .sync_holder_compliance(
                 token_id,
                 holder_address.to_address(),
-                "approved", // kyc_status
-                "blocked",  // aml_status
-                "none",     // investor_class
-                "XX",       // jurisdiction_code
-                0u64,       // expiry_round (permanent)
-                true,       // transfer_locked
-                true,       // receive_locked
-                false,      // auditor_authorized
+                "approved",           // kyc_status
+                "blocked",            // aml_status
+                "none",               // investor_class
+                "XX",                 // jurisdiction_code
+                0u64,                 // expiry_round (permanent)
+                true,                 // transfer_locked
+                true,                 // receive_locked
+                false,                // auditor_authorized
+                0u64,                 // lock_until_round
+                false,                // travel_rule_attested
+                false,                // sanctions_cleared
+                ManagedBuffer::new(), // sanctions_screening_cid
+                ManagedBuffer::new(), // ubo_parent_entity
+                0u32,                 // ownership_pct
             )
             .run()
             .await;

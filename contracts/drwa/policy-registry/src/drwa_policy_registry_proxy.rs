@@ -84,6 +84,8 @@ where
         Arg4: ProxyArg<bool>,
         Arg5: ProxyArg<ManagedVec<Env::Api, ManagedBuffer<Env::Api>>>,
         Arg6: ProxyArg<ManagedVec<Env::Api, ManagedBuffer<Env::Api>>>,
+        Arg7: ProxyArg<bool>,
+        Arg8: ProxyArg<bool>,
     >(
         self,
         token_id: Arg0,
@@ -93,6 +95,8 @@ where
         metadata_protection_enabled: Arg4,
         allowed_investor_classes: Arg5,
         allowed_jurisdictions: Arg6,
+        travel_rule_required: Arg7,
+        sanctions_screening_enabled: Arg8,
     ) -> TxTypedCall<Env, From, To, NotPayable, Gas, DrwaSyncEnvelope<Env::Api>> {
         self.wrapped_tx
             .payment(NotPayable)
@@ -104,6 +108,8 @@ where
             .argument(&metadata_protection_enabled)
             .argument(&allowed_investor_classes)
             .argument(&allowed_jurisdictions)
+            .argument(&travel_rule_required)
+            .argument(&sanctions_screening_enabled)
             .original_result()
     }
 

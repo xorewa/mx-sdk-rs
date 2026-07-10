@@ -14,11 +14,11 @@ const AUTH_ADMIN_DOMAIN: &[u8] = b"auth_admin";
 const AUTH_ADMIN_HEX_V1: &[u8] =
     b"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
-// B-03: proposal TTL must exceed the 24-hour timelock (14_400 rounds).
-// Use 20_000 to give the test scenarios room to advance the block round
-// past the timelock without also tripping the expiry window.
+// B-03: proposal TTL is still round-based, but the security timelock is
+// timestamp-based so future round-duration changes cannot shorten the
+// 24-hour delay.
 const TEST_TTL_ROUNDS: u64 = 20_000;
-const TEST_TIMELOCK_ROUNDS: u64 = 14_400;
+const TEST_TIMELOCK_SECONDS: u64 = 24 * 60 * 60;
 
 fn world() -> ScenarioWorld {
     let mut world = ScenarioWorld::new();
@@ -106,7 +106,9 @@ fn drwa_auth_admin_quorum_threshold_property() {
             });
 
         // Advance past the 24h timelock window and execute.
-        world.current_block().block_round(TEST_TIMELOCK_ROUNDS + 1);
+        world
+            .current_block()
+            .block_timestamp_seconds(TEST_TIMELOCK_SECONDS);
 
         world
             .tx()

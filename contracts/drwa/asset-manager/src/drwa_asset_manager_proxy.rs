@@ -82,13 +82,11 @@ where
         Arg0: ProxyArg<ManagedBuffer<Env::Api>>,
         Arg1: ProxyArg<ManagedBuffer<Env::Api>>,
         Arg2: ProxyArg<ManagedBuffer<Env::Api>>,
-        Arg3: ProxyArg<ManagedBuffer<Env::Api>>,
     >(
         self,
         token_id: Arg0,
         carrier_type: Arg1,
         asset_class: Arg2,
-        policy_id: Arg3,
     ) -> TxTypedCall<Env, From, To, NotPayable, Gas, DrwaSyncEnvelope<Env::Api>> {
         self.wrapped_tx
             .payment(NotPayable)
@@ -96,7 +94,6 @@ where
             .argument(&token_id)
             .argument(&carrier_type)
             .argument(&asset_class)
-            .argument(&policy_id)
             .original_result()
     }
 
@@ -142,6 +139,12 @@ where
         Arg7: ProxyArg<bool>,
         Arg8: ProxyArg<bool>,
         Arg9: ProxyArg<bool>,
+        Arg10: ProxyArg<u64>,
+        Arg11: ProxyArg<bool>,
+        Arg12: ProxyArg<bool>,
+        Arg13: ProxyArg<ManagedBuffer<Env::Api>>,
+        Arg14: ProxyArg<ManagedBuffer<Env::Api>>,
+        Arg15: ProxyArg<u32>,
     >(
         self,
         token_id: Arg0,
@@ -154,6 +157,12 @@ where
         transfer_locked: Arg7,
         receive_locked: Arg8,
         auditor_authorized: Arg9,
+        lock_until_round: Arg10,
+        travel_rule_attested: Arg11,
+        sanctions_cleared: Arg12,
+        sanctions_screening_cid: Arg13,
+        ubo_parent_entity: Arg14,
+        ownership_pct: Arg15,
     ) -> TxTypedCall<Env, From, To, NotPayable, Gas, DrwaSyncEnvelope<Env::Api>> {
         self.wrapped_tx
             .payment(NotPayable)
@@ -168,6 +177,12 @@ where
             .argument(&transfer_locked)
             .argument(&receive_locked)
             .argument(&auditor_authorized)
+            .argument(&lock_until_round)
+            .argument(&travel_rule_attested)
+            .argument(&sanctions_cleared)
+            .argument(&sanctions_screening_cid)
+            .argument(&ubo_parent_entity)
+            .argument(&ownership_pct)
             .original_result()
     }
 
@@ -188,13 +203,11 @@ where
         Arg0: ProxyArg<ManagedBuffer<Env::Api>>,
         Arg1: ProxyArg<ManagedBuffer<Env::Api>>,
         Arg2: ProxyArg<ManagedBuffer<Env::Api>>,
-        Arg3: ProxyArg<ManagedBuffer<Env::Api>>,
     >(
         self,
         token_id: Arg0,
         carrier_type: Arg1,
         asset_class: Arg2,
-        policy_id: Arg3,
     ) -> TxTypedCall<Env, From, To, NotPayable, Gas, ()> {
         self.wrapped_tx
             .payment(NotPayable)
@@ -202,7 +215,6 @@ where
             .argument(&token_id)
             .argument(&carrier_type)
             .argument(&asset_class)
-            .argument(&policy_id)
             .original_result()
     }
 

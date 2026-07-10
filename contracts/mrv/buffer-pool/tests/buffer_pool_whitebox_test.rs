@@ -287,7 +287,7 @@ fn buffer_pool_replenish_buffer_credits_small_amount_rs() {
     let mut world = world();
     deploy_and_deposit(&mut world);
 
-    world.current_block().block_epoch(1_500u64);
+    world.current_block().block_epoch(540u64);
 
     // 10% of 10_000 = 1_000. Replenish 500 (under threshold) from authorized caller.
     world
@@ -349,7 +349,7 @@ fn buffer_pool_replenish_non_governance_cumulative_threshold_fails_rs() {
     let mut world = world();
     deploy_and_deposit(&mut world);
 
-    world.current_block().block_epoch(1_500u64);
+    world.current_block().block_epoch(540u64);
 
     world
         .tx()
@@ -363,7 +363,7 @@ fn buffer_pool_replenish_non_governance_cumulative_threshold_fails_rs() {
             );
         });
 
-    world.current_block().block_epoch(3_000u64);
+    world.current_block().block_epoch(1_080u64);
 
     world
         .tx()
@@ -381,7 +381,7 @@ fn buffer_pool_replenish_non_governance_cumulative_threshold_fails_rs() {
             );
         });
 
-    world.current_block().block_epoch(4_500u64);
+    world.current_block().block_epoch(1_620u64);
 
     world
         .tx()
@@ -450,7 +450,7 @@ fn buffer_pool_replenishment_cooldown_enforcement_rs() {
             );
         });
 
-    world.current_block().block_epoch(1_500u64);
+    world.current_block().block_epoch(540u64);
 
     // First replenishment after cooldown should succeed.
     world
@@ -465,7 +465,7 @@ fn buffer_pool_replenishment_cooldown_enforcement_rs() {
             );
         });
 
-    // Second replenishment at epoch 100 — before cooldown (1500 epochs)
+    // Second replenishment at epoch 100 — before cooldown (540 epochs)
     world.current_block().block_epoch(100u64);
 
     world

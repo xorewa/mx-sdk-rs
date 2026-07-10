@@ -305,6 +305,57 @@ fn come_settlement_fund_rejects_pre_existing_escrow_rs() {
 }
 
 #[test]
+fn come_settlement_fund_rejects_nonzero_nonce_rs() {
+    let mut world = world();
+
+    let come_token: TestTokenIdentifier = TestTokenIdentifier::new("COME-abcdef");
+
+    world.account(OWNER).nonce(1).balance(1_000_000u64);
+    world.account(GOVERNANCE).nonce(1).balance(1_000_000u64);
+    world
+        .account(FARMER)
+        .nonce(1)
+        .balance(1_000_000u64)
+        .esdt_nft_balance(come_token, 1u64, BigUint::from(10_000u64), ());
+    world.account(BUYER).nonce(1).balance(1_000_000u64);
+
+    world
+        .tx()
+        .from(OWNER)
+        .raw_deploy()
+        .code(CODE_PATH)
+        .new_address(SC_ADDRESS)
+        .whitebox(mrv_come_settlement::contract_obj, |sc| {
+            sc.init(GOVERNANCE.to_managed_address());
+        });
+
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(SC_ADDRESS)
+        .whitebox(mrv_come_settlement::contract_obj, |sc| {
+            sc.create_settlement(
+                ManagedBuffer::from(b"settlement-nonce"),
+                FARMER.to_managed_address(),
+                BUYER.to_managed_address(),
+                TokenIdentifier::from("COME-abcdef"),
+                BigUint::from(10_000u64),
+                ManagedBuffer::from(b"bafyreason-nonce"),
+            );
+        });
+
+    world
+        .tx()
+        .from(FARMER)
+        .to(SC_ADDRESS)
+        .payment(Payment::try_new(come_token, 1u64, 10_000u64).unwrap())
+        .returns(ExpectError(4u64, "FUNGIBLE_ONLY: token nonce must be 0"))
+        .whitebox(mrv_come_settlement::contract_obj, |sc| {
+            sc.fund_settlement(ManagedBuffer::from(b"settlement-nonce"));
+        });
+}
+
+#[test]
 fn come_settlement_execute_pending_rs() {
     let mut world = world();
 

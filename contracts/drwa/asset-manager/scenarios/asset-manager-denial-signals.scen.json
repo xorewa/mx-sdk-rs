@@ -33,7 +33,9 @@
             "tx": {
                 "from": "address:owner",
                 "contractCode": "mxsc:../../policy-registry/output/drwa-policy-registry.mxsc.json",
-                "arguments": ["address:owner"],
+                "arguments": [
+                    "address:owner"
+                ],
                 "gasLimit": "50,000,000",
                 "gasPrice": "0"
             },
@@ -50,7 +52,9 @@
             "tx": {
                 "from": "address:owner",
                 "contractCode": "mxsc:../output/drwa-asset-manager.mxsc.json",
-                "arguments": ["address:owner"],
+                "arguments": [
+                    "address:owner"
+                ],
                 "gasLimit": "50,000,000",
                 "gasPrice": "0"
             },
@@ -68,7 +72,9 @@
                 "from": "address:owner",
                 "to": "sc:drwa_asset_manager",
                 "function": "setPolicyRegistryAddress",
-                "arguments": ["sc:drwa_policy_registry"],
+                "arguments": [
+                    "sc:drwa_policy_registry"
+                ],
                 "gasLimit": "50,000,000",
                 "gasPrice": "0"
             },
@@ -93,7 +99,9 @@
                     "false",
                     "false",
                     "nested:str:ACCREDITED",
-                    "nested:str:SG"
+                    "nested:str:SG",
+                    "false",
+                    "false"
                 ],
                 "gasLimit": "50,000,000",
                 "gasPrice": "0"
@@ -115,8 +123,7 @@
                 "arguments": [
                     "str:CARBON-ab12cd",
                     "str:ESDT",
-                    "str:Carbon",
-                    "str:CARBON-ab12cd"
+                    "str:Carbon"
                 ],
                 "gasLimit": "50,000,000",
                 "gasPrice": "0"
@@ -146,7 +153,13 @@
                     "250",
                     "false",
                     "false",
-                    "false"
+                    "false",
+                    "0",
+                    "false",
+                    "false",
+                    "str:",
+                    "str:",
+                    "0"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"
@@ -176,7 +189,13 @@
                     "250",
                     "false",
                     "false",
-                    "false"
+                    "false",
+                    "0",
+                    "false",
+                    "false",
+                    "str:",
+                    "str:",
+                    "0"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"
@@ -206,7 +225,13 @@
                     "250",
                     "false",
                     "false",
-                    "false"
+                    "false",
+                    "0",
+                    "false",
+                    "false",
+                    "str:",
+                    "str:",
+                    "0"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"
@@ -236,7 +261,13 @@
                     "250",
                     "true",
                     "false",
-                    "false"
+                    "false",
+                    "0",
+                    "false",
+                    "false",
+                    "str:",
+                    "str:",
+                    "0"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"
@@ -266,7 +297,13 @@
                     "100",
                     "false",
                     "false",
-                    "false"
+                    "false",
+                    "0",
+                    "false",
+                    "false",
+                    "str:",
+                    "str:",
+                    "0"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"
@@ -284,10 +321,14 @@
             "tx": {
                 "to": "sc:drwa_asset_manager",
                 "function": "getAsset",
-                "arguments": ["str:CARBON-ab12cd"]
+                "arguments": [
+                    "str:CARBON-ab12cd"
+                ]
             },
             "expect": {
-                "out": ["*"],
+                "out": [
+                    "*"
+                ],
                 "status": "0"
             }
         },
@@ -308,7 +349,13 @@
                     "252",
                     "false",
                     "false",
-                    "false"
+                    "false",
+                    "0",
+                    "false",
+                    "false",
+                    "str:",
+                    "str:",
+                    "0"
                 ],
                 "gasLimit": "100,000,000",
                 "gasPrice": "0"

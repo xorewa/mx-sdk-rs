@@ -29,8 +29,8 @@ fn world() -> ScenarioWorld {
 // When re-enabling, update each scenario to:
 //   (1) deploy with 5 signers (signer1..signer5) and quorum=3,
 //   (2) set `proposal_ttl_rounds` to at least 20_000,
-//   (3) insert an explicit `currentBlockInfo.blockRound` bump past
-//       14_400 before any `performAction` step expecting success,
+//   (3) insert an explicit timestamp bump past 24h before any
+//       `performAction` step expecting success,
 //   (4) require the two extra `sign` calls to reach quorum=3.
 
 #[test]

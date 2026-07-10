@@ -65,6 +65,8 @@ fn deploy_with_policy_registry(world: &mut ScenarioWorld) {
                 false,
                 ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
                 ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
+                false,
+                false,
             )
             .run();
     }
@@ -101,7 +103,6 @@ fn asset_manager_blackbox_register_and_query() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"Hospitality"),
-            ManagedBuffer::from(b"HOTEL-ab12cd"),
         )
         .run();
 
@@ -122,10 +123,6 @@ fn asset_manager_blackbox_register_and_query() {
     assert_eq!(
         asset.asset_class,
         ManagedBuffer::<StaticApi>::from(b"Hospitality")
-    );
-    assert_eq!(
-        asset.policy_id,
-        ManagedBuffer::<StaticApi>::from(b"HOTEL-ab12cd")
     );
     assert!(asset.regulated);
 }
@@ -153,7 +150,6 @@ fn asset_manager_blackbox_sync_holder_compliance() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"Hospitality"),
-            ManagedBuffer::from(b"HOTEL-ab12cd"),
         )
         .run();
 
@@ -174,6 +170,12 @@ fn asset_manager_blackbox_sync_holder_compliance() {
             false,  // transfer_locked
             false,  // receive_locked
             false,  // auditor_authorized is attestation-owned
+            0u64,
+            false,
+            false,
+            ManagedBuffer::new(),
+            ManagedBuffer::new(),
+            0u32,
         )
         .run();
 
@@ -194,6 +196,12 @@ fn asset_manager_blackbox_sync_holder_compliance() {
             true, // transfer_locked changed
             false,
             false,
+            0u64,
+            false,
+            false,
+            ManagedBuffer::new(),
+            ManagedBuffer::new(),
+            0u32,
         )
         .run();
 }
@@ -220,7 +228,6 @@ fn asset_manager_blackbox_non_owner_rejected() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"Hospitality"),
-            ManagedBuffer::from(b"HOTEL-ab12cd"),
         )
         .with_result(ExpectError(4, "caller not authorized"))
         .run();
@@ -247,7 +254,6 @@ fn asset_manager_blackbox_duplicate_registration_rejected() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"Hospitality"),
-            ManagedBuffer::from(b"HOTEL-ab12cd"),
         )
         .run();
 
@@ -261,7 +267,6 @@ fn asset_manager_blackbox_duplicate_registration_rejected() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"Hospitality"),
-            ManagedBuffer::from(TOKEN_ID),
         )
         .with_result(ExpectError(
             4,

@@ -69,6 +69,8 @@ fn asset_manager_upgrade_preserves_asset_holder_and_storage_version() {
             false,
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
+            false,
+            false,
         )
         .run();
 
@@ -81,7 +83,6 @@ fn asset_manager_upgrade_preserves_asset_holder_and_storage_version() {
             ManagedBuffer::from(TOKEN_ID),
             ManagedBuffer::from(b"ESDT"),
             ManagedBuffer::from(b"Hospitality"),
-            ManagedBuffer::from(b"HOTEL-ab12cd"),
         )
         .run();
 
@@ -101,6 +102,12 @@ fn asset_manager_upgrade_preserves_asset_holder_and_storage_version() {
             false,
             false,
             false,
+            0u64,
+            false,
+            false,
+            ManagedBuffer::new(),
+            ManagedBuffer::new(),
+            0u32,
         )
         .run();
 
@@ -121,7 +128,6 @@ fn asset_manager_upgrade_preserves_asset_holder_and_storage_version() {
 
             let asset = sc.asset(&ManagedBuffer::from(TOKEN_ID)).get();
             assert!(asset.regulated);
-            assert_eq!(asset.policy_id, ManagedBuffer::from(b"HOTEL-ab12cd"));
 
             let mirror = sc
                 .holder_mirror(&ManagedBuffer::from(TOKEN_ID), &HOLDER.to_managed_address())

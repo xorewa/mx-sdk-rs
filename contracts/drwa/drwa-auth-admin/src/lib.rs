@@ -38,7 +38,7 @@ pub enum DrwaAuthAction<M: ManagedTypeApi> {
 pub struct DrwaAuthActionProposalEvent {
     pub created_round: u64,
     pub expiry_round: u64,
-    pub timelock_rounds: u64,
+    pub timelock_seconds: u64,
 }
 
 #[type_abi]
@@ -94,7 +94,7 @@ impl<M: ManagedTypeApi> DrwaAuthAction<M> {
 //     by governance.
 //
 // We encode the timelock at *propose* time so a later quorum change cannot
-// retro-shorten the delay for a pending action. `action_approved_at_round`
+// retro-shorten the delay for a pending action. `action_approved_at_timestamp`
 // is set when the Nth signature lands and is cleared by `unsign` when the
 // approval count drops back below quorum.
 
@@ -107,18 +107,16 @@ const DRWA_AUTH_MIN_SIGNER_COUNT: usize = 5;
 /// Minimum quorum. See `DRWA_AUTH_MIN_SIGNER_COUNT`.
 const DRWA_AUTH_MIN_QUORUM: usize = 3;
 
-/// Block-round equivalent of a 24-hour timelock at ~6 seconds per round.
-/// Applied by default to every admin action. Signer add / remove /
-/// replace / caller-address updates and quorum changes all land on this
-/// delay unless an operator explicitly configures a longer one for a
-/// specific domain.
-const DRWA_AUTH_TIMELOCK_DEFAULT_ROUNDS: u64 = 14_400;
+/// Wall-clock 24-hour timelock in seconds. Applied by default to every
+/// admin action. This is intentionally timestamp-based, not round-based,
+/// so a future round-duration change cannot silently shorten governance
+/// delay windows.
+const DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS: u64 = 24 * 60 * 60;
 
-/// Block-round equivalent of a 48-hour timelock. Applied when the action
-/// targets the `recovery-admin` caller domain (see the match arm in
-/// `propose_update_caller_address` / resolution inside `create_action`).
-const DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_ROUNDS: u64 = 28_800;
-const DRWA_AUTH_STORAGE_VERSION: u32 = 2;
+/// Wall-clock 48-hour timelock in seconds. Applied when the action targets
+/// the `recovery-admin` caller domain.
+const DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS: u64 = 48 * 60 * 60;
+const DRWA_AUTH_STORAGE_VERSION: u32 = 3;
 const DRWA_EMERGENCY_OVERRIDE_POLICY: &[u8] =
     b"not_supported: all auth-admin actions require quorum and timelock";
 
@@ -204,6 +202,9 @@ pub trait DrwaAuthAdmin {
         if stored_version < 2u32 {
             self.migrate_v1_to_v2();
         }
+        if stored_version < 3u32 {
+            self.migrate_v2_to_v3();
+        }
 
         self.storage_version().set(DRWA_AUTH_STORAGE_VERSION);
     }
@@ -218,19 +219,19 @@ pub trait DrwaAuthAdmin {
         require!(!domain.is_empty(), "domain must not be empty");
         self.require_valid_authorized_caller(&new_address);
         // B-03: caller-address updates for the recovery-admin domain carry a
-        // 48-hour timelock per procedure §5.2 / §6.2. All other domains use
+        // 48-hour timelock per procedure Sec. 5.2 / Sec. 6.2. All other domains use
         // the default 24-hour delay.
-        let timelock_rounds = if domain == b"recovery_admin" {
-            DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_ROUNDS
+        let timelock_seconds = if domain == b"recovery_admin" {
+            DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS
         } else {
-            DRWA_AUTH_TIMELOCK_DEFAULT_ROUNDS
+            DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS
         };
         self.create_action_with_timelock(
             DrwaAuthAction::UpdateCallerAddress {
                 domain,
                 new_address,
             },
-            timelock_rounds,
+            timelock_seconds,
         )
     }
 
@@ -244,7 +245,7 @@ pub trait DrwaAuthAdmin {
         );
         self.create_action_with_timelock(
             DrwaAuthAction::AddSigner { new_signer },
-            DRWA_AUTH_TIMELOCK_DEFAULT_ROUNDS,
+            DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS,
         )
     }
 
@@ -255,7 +256,7 @@ pub trait DrwaAuthAdmin {
         require!(self.signers().contains(&signer), "signer not found");
         self.create_action_with_timelock(
             DrwaAuthAction::RemoveSigner { signer },
-            DRWA_AUTH_TIMELOCK_DEFAULT_ROUNDS,
+            DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS,
         )
     }
 
@@ -278,7 +279,7 @@ pub trait DrwaAuthAdmin {
                 old_signer,
                 new_signer,
             },
-            DRWA_AUTH_TIMELOCK_DEFAULT_ROUNDS,
+            DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS,
         )
     }
 
@@ -287,7 +288,7 @@ pub trait DrwaAuthAdmin {
         self.require_signer();
         self.create_action_with_timelock(
             DrwaAuthAction::ChangeQuorum { new_quorum },
-            DRWA_AUTH_TIMELOCK_DEFAULT_ROUNDS,
+            DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS,
         )
     }
 
@@ -297,36 +298,45 @@ pub trait DrwaAuthAdmin {
         self.require_pending_action(action_id);
         let caller = self.blockchain().get_caller();
         let current_count_before = self.current_action_signer_count(action_id);
-        if !self.action_approved_at_round(action_id).is_empty()
+        if !self
+            .action_approved_at_timestamp_seconds(action_id)
+            .is_empty()
             && current_count_before < self.quorum().get()
         {
             self.action_approved_at_round(action_id).clear();
+            self.action_approved_at_timestamp_seconds(action_id).clear();
         }
         if !self.action_signers(action_id).contains(&caller) {
             self.action_signers(action_id).insert(caller.clone());
             self.signer_pending_action_ids(&caller).insert(action_id);
         }
-        // B-03: capture the round on which quorum is first reached; the
+        // B-03: capture the timestamp at which quorum is first reached; the
         // timelock window is measured from this instant, not from the
         // initial propose. If quorum is later lost via `unsign` the
-        // stored round is cleared so a subsequent re-approval restarts
+        // stored timestamp is cleared so a subsequent re-approval restarts
         // the timelock. This matches the procedure-doc intent of
         // "24-hour timelock AFTER threshold reached."
-        //
-        // Encoding: stored value = round + 1 so that a round-0 approval
-        // is distinguishable from "never approved" (`SingleValueMapper<u64>`
-        // reports a storage slot containing 0 as `is_empty()==true`, so
-        // the offset ensures the slot always carries a non-zero value
-        // once set).
         let current_count = self.current_action_signer_count(action_id);
-        if self.action_approved_at_round(action_id).is_empty()
+        if self
+            .action_approved_at_timestamp_seconds(action_id)
+            .is_empty()
             && current_count >= self.quorum().get()
         {
-            let current = self.blockchain().get_block_round();
-            let approved_at = current
+            let current_round = self.blockchain().get_block_round();
+            let approved_at_round = current_round
                 .checked_add(1)
                 .unwrap_or_else(|| sc_panic!("action approval round overflow"));
-            self.action_approved_at_round(action_id).set(approved_at);
+            self.action_approved_at_round(action_id)
+                .set(approved_at_round);
+            let current_timestamp = self
+                .blockchain()
+                .get_block_timestamp_seconds()
+                .as_u64_seconds();
+            let approved_at_timestamp = current_timestamp
+                .checked_add(1)
+                .unwrap_or_else(|| sc_panic!("action approval timestamp overflow"));
+            self.action_approved_at_timestamp_seconds(action_id)
+                .set(approved_at_timestamp);
         }
 
         self.action_signed_event(
@@ -354,6 +364,7 @@ pub trait DrwaAuthAdmin {
         let current_count = self.current_action_signer_count(action_id);
         if current_count < self.quorum().get() {
             self.action_approved_at_round(action_id).clear();
+            self.action_approved_at_timestamp_seconds(action_id).clear();
         }
 
         self.action_unsigned_event(
@@ -396,6 +407,10 @@ pub trait DrwaAuthAdmin {
         );
         self.require_pending_action(action_id);
         let current_round = self.blockchain().get_block_round();
+        let current_timestamp = self
+            .blockchain()
+            .get_block_timestamp_seconds()
+            .as_u64_seconds();
         require!(
             current_round <= self.action_expiry_round(action_id).get(),
             "action expired"
@@ -417,22 +432,26 @@ pub trait DrwaAuthAdmin {
         // A future emergency-governor must be a separate audited contract,
         // not an implicit zero-timelock branch hidden in auth-admin.
         require!(
-            !self.action_approved_at_round(action_id).is_empty(),
-            "approval round not recorded; sign again after reaching quorum"
+            !self
+                .action_approved_at_timestamp_seconds(action_id)
+                .is_empty(),
+            "approval timestamp not recorded; sign again after reaching quorum"
         );
-        // Stored as `round + 1` (see `sign`). Subtract the offset here to
-        // recover the true round at which quorum was reached.
-        let approved_round = self
-            .action_approved_at_round(action_id)
+        // Stored as `timestamp + 1` so timestamp-zero scenario approvals
+        // remain distinguishable from "never approved". Subtract the
+        // offset here to recover the true timestamp at which quorum was
+        // reached.
+        let approved_timestamp = self
+            .action_approved_at_timestamp_seconds(action_id)
             .get()
             .checked_sub(1)
-            .unwrap_or_else(|| sc_panic!("action approval round underflow"));
-        let timelock_rounds = self.action_timelock_rounds(action_id).get();
-        let executable_round = approved_round
-            .checked_add(timelock_rounds)
-            .unwrap_or_else(|| sc_panic!("action timelock round overflow"));
+            .unwrap_or_else(|| sc_panic!("action approval timestamp underflow"));
+        let timelock_seconds = self.action_timelock_seconds(action_id).get();
+        let executable_timestamp = approved_timestamp
+            .checked_add(timelock_seconds)
+            .unwrap_or_else(|| sc_panic!("action timelock timestamp overflow"));
         require!(
-            current_round >= executable_round,
+            current_timestamp >= executable_timestamp,
             "timelock not elapsed: must wait 24h after quorum (48h for recovery-admin)"
         );
 
@@ -595,8 +614,8 @@ pub trait DrwaAuthAdmin {
     /// B-03 (AUD-003): round at which the action's approval count first
     /// reached `quorum`. Populated by `sign` when the quorum threshold
     /// is crossed upward; cleared by `unsign` when it drops back below.
-    /// `performAction` rejects when this is empty (quorum never reached)
-    /// or when `current_round < approved_round + timelock_rounds`.
+    /// Deprecated compatibility metadata: `performAction` now enforces
+    /// `actionApprovedAtTimestampSeconds + actionTimelockSeconds`.
     ///
     /// Encoding: the stored value is `approved_round + 1`. The `+ 1`
     /// offset lets `SingleValueMapper::is_empty()` act as the "not yet
@@ -608,13 +627,33 @@ pub trait DrwaAuthAdmin {
     #[storage_mapper("actionApprovedAtRound")]
     fn action_approved_at_round(&self, action_id: u64) -> SingleValueMapper<u64>;
 
-    /// B-03 (AUD-003): timelock window in block rounds that must elapse
-    /// between `action_approved_at_round` and a successful
-    /// `performAction`. Set at propose time and immutable thereafter
-    /// so a later `ChangeQuorum` cannot retro-shorten pending actions.
+    /// Deprecated compatibility metadata for legacy round-based callers.
+    /// Security enforcement uses `getActionTimelockSeconds`.
     #[view(getActionTimelockRounds)]
     #[storage_mapper("actionTimelockRounds")]
     fn action_timelock_rounds(&self, action_id: u64) -> SingleValueMapper<u64>;
+
+    /// B-03 (AUD-003): timestamp in seconds at which the action's approval
+    /// count first reached `quorum`. Populated by `sign` when the threshold
+    /// is crossed upward; cleared by `unsign` when it drops back below.
+    /// `performAction` rejects when this is empty or when
+    /// `current_timestamp < approved_timestamp + timelock_seconds`.
+    ///
+    /// Encoding: the stored value is `approved_timestamp + 1`. The `+ 1`
+    /// offset lets `SingleValueMapper::is_empty()` act as the "not yet
+    /// approved" sentinel even in timestamp-zero scenario tests.
+    #[view(getActionApprovedAtTimestampSeconds)]
+    #[storage_mapper("actionApprovedAtTimestampSeconds")]
+    fn action_approved_at_timestamp_seconds(&self, action_id: u64) -> SingleValueMapper<u64>;
+
+    /// B-03 (AUD-003): wall-clock timelock window in seconds that must
+    /// elapse between `action_approved_at_timestamp_seconds` and a
+    /// successful `performAction`. Set at propose time and immutable
+    /// thereafter so a later `ChangeQuorum` cannot retro-shorten pending
+    /// actions.
+    #[view(getActionTimelockSeconds)]
+    #[storage_mapper("actionTimelockSeconds")]
+    fn action_timelock_seconds(&self, action_id: u64) -> SingleValueMapper<u64>;
 
     #[view(getAllSigners)]
     #[storage_mapper("signers")]
@@ -671,18 +710,18 @@ pub trait DrwaAuthAdmin {
     /// `create_action_with_timelock` directly; this helper remains for
     /// backward-compat with any external code that calls it.
     fn create_action(&self, action: DrwaAuthAction<Self::Api>) -> u64 {
-        self.create_action_with_timelock(action, DRWA_AUTH_TIMELOCK_DEFAULT_ROUNDS)
+        self.create_action_with_timelock(action, DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS)
     }
 
     fn create_action_with_timelock(
         &self,
         action: DrwaAuthAction<Self::Api>,
-        timelock_rounds: u64,
+        timelock_seconds: u64,
     ) -> u64 {
         // C-213: timelock must be positive. There is no zero-timelock
         // emergency branch in this contract.
         require!(
-            timelock_rounds > 0,
+            timelock_seconds > 0,
             "action timelock must be > 0 (emergency override not supported)"
         );
 
@@ -701,7 +740,12 @@ pub trait DrwaAuthAdmin {
             .checked_add(self.proposal_ttl_rounds().get())
             .unwrap_or_else(|| sc_panic!("action expiry round overflow"));
         self.action_expiry_round(action_id).set(expiry_round);
-        self.action_timelock_rounds(action_id).set(timelock_rounds);
+        self.action_timelock_seconds(action_id)
+            .set(timelock_seconds);
+        // Compatibility metadata for consumers that still query the old
+        // round-based view. It is no longer used for enforcement.
+        self.action_timelock_rounds(action_id)
+            .set(self.timelock_seconds_to_legacy_rounds(timelock_seconds));
         self.action_signers(action_id).insert(proposer.clone());
         self.signer_pending_action_ids(&proposer).insert(action_id);
         // Propose-time quorum check: the proposer counts as the first
@@ -714,6 +758,15 @@ pub trait DrwaAuthAdmin {
                 .checked_add(1)
                 .unwrap_or_else(|| sc_panic!("action approval round overflow"));
             self.action_approved_at_round(action_id).set(approved_at);
+            let current_timestamp = self
+                .blockchain()
+                .get_block_timestamp_seconds()
+                .as_u64_seconds();
+            let approved_at_timestamp = current_timestamp
+                .checked_add(1)
+                .unwrap_or_else(|| sc_panic!("action approval timestamp overflow"));
+            self.action_approved_at_timestamp_seconds(action_id)
+                .set(approved_at_timestamp);
         }
         self.action_proposed_event(
             action_id,
@@ -722,7 +775,7 @@ pub trait DrwaAuthAdmin {
             DrwaAuthActionProposalEvent {
                 created_round: current_round,
                 expiry_round,
-                timelock_rounds,
+                timelock_seconds,
             },
         );
         action_id
@@ -753,6 +806,8 @@ pub trait DrwaAuthAdmin {
         // orphan state after `discardAction` or `performAction`.
         self.action_approved_at_round(action_id).clear();
         self.action_timelock_rounds(action_id).clear();
+        self.action_approved_at_timestamp_seconds(action_id).clear();
+        self.action_timelock_seconds(action_id).clear();
     }
 
     fn current_action_signer_count(&self, action_id: u64) -> usize {
@@ -781,6 +836,7 @@ pub trait DrwaAuthAdmin {
                 self.action_signers(action_id).swap_remove(signer);
                 if self.current_action_signer_count(action_id) < self.quorum().get() {
                     self.action_approved_at_round(action_id).clear();
+                    self.action_approved_at_timestamp_seconds(action_id).clear();
                 }
             }
         }
@@ -803,8 +859,9 @@ pub trait DrwaAuthAdmin {
             }
 
             if self.action_timelock_rounds(action_id).is_empty() {
-                self.action_timelock_rounds(action_id)
-                    .set(DRWA_AUTH_TIMELOCK_DEFAULT_ROUNDS);
+                self.action_timelock_rounds(action_id).set(
+                    self.timelock_seconds_to_legacy_rounds(DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS),
+                );
             }
 
             if self.action_approved_at_round(action_id).is_empty()
@@ -815,6 +872,44 @@ pub trait DrwaAuthAdmin {
                     .unwrap_or_else(|| sc_panic!("action approval round overflow"));
                 self.action_approved_at_round(action_id).set(approved_at);
             }
+        }
+    }
+
+    fn migrate_v2_to_v3(&self) {
+        let current_timestamp = self
+            .blockchain()
+            .get_block_timestamp_seconds()
+            .as_u64_seconds();
+        let next_action_id = self.next_action_id().get();
+        for action_id in 1..next_action_id {
+            if self.actions(action_id).is_empty() {
+                continue;
+            }
+
+            if self.action_timelock_seconds(action_id).is_empty() {
+                self.action_timelock_seconds(action_id)
+                    .set(DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS);
+            }
+
+            if self
+                .action_approved_at_timestamp_seconds(action_id)
+                .is_empty()
+                && !self.action_approved_at_round(action_id).is_empty()
+            {
+                let approved_at = current_timestamp
+                    .checked_add(1)
+                    .unwrap_or_else(|| sc_panic!("action approval timestamp overflow"));
+                self.action_approved_at_timestamp_seconds(action_id)
+                    .set(approved_at);
+            }
+        }
+    }
+
+    fn timelock_seconds_to_legacy_rounds(&self, timelock_seconds: u64) -> u64 {
+        if timelock_seconds == DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS {
+            28_800
+        } else {
+            14_400
         }
     }
 

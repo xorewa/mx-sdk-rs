@@ -68,6 +68,8 @@ fn policy_registry_blackbox_deploy_and_set_policy() {
             true,  // metadata_protection_enabled
             investor_classes,
             jurisdictions,
+            false,
+            false,
         )
         .run();
 
@@ -133,6 +135,8 @@ fn policy_registry_blackbox_non_owner_rejected() {
             false,
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
+            false,
+            false,
         )
         .with_result(ExpectError(4, "caller not authorized"))
         .run();
@@ -174,6 +178,8 @@ fn policy_registry_blackbox_version_increments() {
             false,
             empty_classes.clone(),
             empty_jurisdictions.clone(),
+            false,
+            false,
         )
         .run();
 
@@ -200,6 +206,8 @@ fn policy_registry_blackbox_version_increments() {
             false,
             empty_classes,
             empty_jurisdictions,
+            false,
+            false,
         )
         .run();
 
@@ -306,6 +314,8 @@ fn policy_registry_blackbox_governance_handoff() {
             false,
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
+            false,
+            false,
         )
         .run();
 

@@ -69,6 +69,8 @@ fn policy_registry_gas_smoke_for_deploy_and_set_policy() {
             true,
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
+            false,
+            false,
         )
         .returns(ReturnsGasUsed)
         .run();
@@ -135,6 +137,8 @@ fn policy_registry_gas_smoke_diagnostics() {
             true,
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
             ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
+            false,
+            false,
         )
         .returns(ReturnsStatus)
         .returns(ReturnsMessage)

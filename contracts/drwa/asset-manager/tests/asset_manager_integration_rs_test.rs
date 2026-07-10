@@ -67,6 +67,8 @@ fn asset_manager_init_rs() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
         },
     );
@@ -80,7 +82,6 @@ fn asset_manager_init_rs() {
                 ManagedBuffer::from(b"HOTEL-ab12cd"),
                 ManagedBuffer::from(b"ESDT"),
                 ManagedBuffer::from(b"Hospitality"),
-                ManagedBuffer::from(b"HOTEL-ab12cd"),
             );
 
             let envelope = sc.sync_holder_compliance(
@@ -94,6 +95,12 @@ fn asset_manager_init_rs() {
                 false,
                 false,
                 false,
+                0u64,
+                false,
+                false,
+                ManagedBuffer::new(),
+                ManagedBuffer::new(),
+                0u32,
             );
 
             assert!(envelope.caller_domain == DrwaCallerDomain::AssetManager);
@@ -147,6 +154,8 @@ fn asset_manager_denial_signals_rs() {
                 false,
                 ManagedVec::new(),
                 ManagedVec::new(),
+                false,
+                false,
             );
         },
     );
@@ -160,7 +169,6 @@ fn asset_manager_denial_signals_rs() {
                 ManagedBuffer::from(b"HOTEL-bc23de"),
                 ManagedBuffer::from(b"ESDT"),
                 ManagedBuffer::from(b"Hospitality"),
-                ManagedBuffer::from(b"HOTEL-bc23de"),
             );
 
             let envelope = sc.sync_holder_compliance(
@@ -174,6 +182,12 @@ fn asset_manager_denial_signals_rs() {
                 true,
                 true,
                 false,
+                0u64,
+                false,
+                false,
+                ManagedBuffer::new(),
+                ManagedBuffer::new(),
+                0u32,
             );
 
             assert_eq!(envelope.operations.get(0).version, 1);
