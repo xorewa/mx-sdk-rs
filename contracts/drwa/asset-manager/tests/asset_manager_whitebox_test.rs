@@ -1,6 +1,6 @@
 use drwa_asset_manager::DrwaAssetManager;
 use drwa_common::{
-    DrwaCallerDomain, DrwaGovernanceModule, DrwaSyncOperationType, set_drwa_sync_hook_test_result,
+    set_drwa_sync_hook_test_result, DrwaCallerDomain, DrwaGovernanceModule, DrwaSyncOperationType,
 };
 use drwa_policy_registry::DrwaPolicyRegistry;
 use multiversx_sc::types::ManagedBuffer;
@@ -337,6 +337,68 @@ fn asset_manager_sync_hook_failure_reverts_asset_registration() {
 }
 
 #[test]
+fn asset_manager_sync_hook_failure_reverts_holder_policy_marker() {
+    let mut world = world();
+
+    world.account(OWNER).nonce(1).balance(1_000_000u64);
+    world.account(GOVERNANCE).nonce(1).balance(1_000_000u64);
+    deploy_asset_manager_with_policy_registry(&mut world, GOVERNANCE);
+
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(SC_ADDRESS)
+        .whitebox(drwa_asset_manager::contract_obj, |sc| {
+            sc.register_asset(
+                ManagedBuffer::from(TOKEN_ID_1),
+                ManagedBuffer::from(b"ESDT"),
+                ManagedBuffer::from(b"Hospitality"),
+            );
+        });
+
+    set_drwa_sync_hook_test_result(13);
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(SC_ADDRESS)
+        .returns(ExpectError(4u64, "native mirror sync failed"))
+        .whitebox(drwa_asset_manager::contract_obj, |sc| {
+            sc.sync_holder_compliance(
+                ManagedBuffer::from(TOKEN_ID_1),
+                HOLDER.to_managed_address(),
+                ManagedBuffer::from(b"approved"),
+                ManagedBuffer::from(b"clear"),
+                ManagedBuffer::from(b"accredited"),
+                ManagedBuffer::from(b"SG"),
+                250,
+                false,
+                false,
+                false,
+                0u64,
+                false,
+                false,
+                ManagedBuffer::new(),
+                ManagedBuffer::new(),
+                0u32,
+            );
+        });
+    set_drwa_sync_hook_test_result(0);
+
+    world
+        .query()
+        .to(SC_ADDRESS)
+        .whitebox(drwa_asset_manager::contract_obj, |sc| {
+            let token_id = ManagedBuffer::from(TOKEN_ID_1);
+            let holder = HOLDER.to_managed_address();
+            assert!(sc.holder_mirror(&token_id, &holder).is_empty());
+            assert!(sc.holder_policy_version(&token_id, &holder).is_empty());
+            assert!(sc
+                .holder_policy_version_evaluated(&token_id, &holder)
+                .is_empty());
+        });
+}
+
+#[test]
 fn asset_manager_rejects_non_owner_and_increments_holder_version() {
     let mut world = world();
 
@@ -611,6 +673,77 @@ fn asset_manager_identical_holder_sync_is_noop() {
                 0u32,
             );
             assert_eq!(envelope.operations.get(0).version, 1);
+            assert_eq!(
+                sc.holder_policy_version_evaluated(
+                    &ManagedBuffer::from(TOKEN_ID_1),
+                    &HOLDER.to_managed_address(),
+                )
+                .get(),
+                1
+            );
+        });
+
+    // The holder fields are unchanged, but a policy revision must force a fresh
+    // native write so the mirror records the policy version that was evaluated.
+    world.tx().from(GOVERNANCE).to(POLICY_SC_ADDRESS).whitebox(
+        drwa_policy_registry::contract_obj,
+        |sc| {
+            sc.set_token_policy(
+                ManagedBuffer::from(TOKEN_ID_1),
+                true,
+                true,
+                false,
+                false,
+                ManagedVec::new(),
+                ManagedVec::new(),
+                false,
+                false,
+            );
+        },
+    );
+
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(SC_ADDRESS)
+        .whitebox(drwa_asset_manager::contract_obj, |sc| {
+            let envelope = sc.sync_holder_compliance(
+                ManagedBuffer::from(TOKEN_ID_1),
+                HOLDER.to_managed_address(),
+                ManagedBuffer::from(b"approved"),
+                ManagedBuffer::from(b"clear"),
+                ManagedBuffer::from(b"accredited"),
+                ManagedBuffer::from(b"SG"),
+                250,
+                false,
+                false,
+                false,
+                0u64,
+                false,
+                false,
+                ManagedBuffer::new(),
+                ManagedBuffer::new(),
+                0u32,
+            );
+            assert_eq!(envelope.operations.len(), 1);
+            assert_eq!(envelope.operations.get(0).version, 2);
+            envelope
+                .operations
+                .get(0)
+                .body
+                .with_buffer_contents(|body| {
+                    assert!(core::str::from_utf8(body)
+                        .unwrap()
+                        .contains("\"policy_version_evaluated\":2"));
+                });
+            assert_eq!(
+                sc.holder_policy_version_evaluated(
+                    &ManagedBuffer::from(TOKEN_ID_1),
+                    &HOLDER.to_managed_address(),
+                )
+                .get(),
+                2
+            );
         });
 
     world
@@ -643,7 +776,7 @@ fn asset_manager_identical_holder_sync_is_noop() {
                     &HOLDER.to_managed_address(),
                 )
                 .get(),
-                1
+                2
             );
         });
 }
@@ -944,11 +1077,9 @@ fn wind_down_complete_keeps_transfer_lock_and_rejects_cancel() {
             let body_bytes = body.to_boxed_bytes();
             let body_slice = body_bytes.as_slice();
             assert_eq!(body_slice[0], 0x01);
-            assert!(
-                core::str::from_utf8(&body_slice[1..])
-                    .unwrap()
-                    .contains("\"wind_down_status\":\"completed\"")
-            );
+            assert!(core::str::from_utf8(&body_slice[1..])
+                .unwrap()
+                .contains("\"wind_down_status\":\"completed\""));
         });
 
     world

@@ -650,20 +650,13 @@ pub trait CarbonCreditModule: mrv_common::MrvGovernanceModule {
             payment.amount == reversed_amount_scaled,
             "wrong reversal burn amount"
         );
-        self.send()
-            .esdt_local_burn(&dvcu_token_id, 0, &reversed_amount_scaled);
-        self.total_dvcu_burned()
-            .update(|total| *total += &reversed_amount_scaled);
-        self.reversed_issuance_lots()
-            .insert(lot_id.clone(), reversed_amount_scaled.clone());
-        self.sync_registry_reversed_lot(&lot_id, &reversed_amount_scaled, &replacement_lot_id);
-        self.issuance_lot_reversal_recorded_event(
-            &lot_id,
-            &IssuanceLotReversalRecordedPayload {
-                reversed_amount_scaled,
-                replacement_lot_id,
-            },
-        );
+
+        // A reversal must not burn supply or record terminal state until the
+        // paired buffer cancellation can be proven. Keeping this guard in the
+        // carbon-credit authority closes the path even when no registry mirror
+        // address is configured.
+        let _ = replacement_lot_id;
+        sc_panic!("reversal disabled pending buffer reconciliation");
     }
 
     /// Reverts an initiated retirement back to `reverted` status. Only
@@ -1193,7 +1186,7 @@ pub trait CarbonCreditModule: mrv_common::MrvGovernanceModule {
     /// Project-scoped GSOC serial index used for canonical reserve-proof hashing.
     #[storage_mapper("projectGsocSerials")]
     fn project_gsoc_serials(&self, project_id: &ManagedBuffer)
-    -> UnorderedSetMapper<ManagedBuffer>;
+        -> UnorderedSetMapper<ManagedBuffer>;
 
     /// Legacy canonical GSOC serial inventory hash cache per project.
     /// Cleared on every mutation that affects the project's serial set.

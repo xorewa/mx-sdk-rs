@@ -14,8 +14,8 @@ pub mod income_distribution_proxy;
 const MINIMUM_CLAIM_WINDOW_EPOCHS: u64 = 3;
 
 /// Maximum epochs between funding and expiry for the target deployment.
-/// With four-hour epochs, 2,190 epochs is approximately one year.
-const MAXIMUM_CLAIM_WINDOW_EPOCHS: u64 = 2_190;
+/// With 20-minute epochs, 26,280 epochs is exactly 365 days.
+const MAXIMUM_CLAIM_WINDOW_EPOCHS: u64 = 26_280;
 
 /// Maximum allowed length (in bytes) for a distribution identifier to
 /// prevent storage-key bloat.

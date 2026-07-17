@@ -5,8 +5,8 @@ pub mod governance_proxy;
 multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
-use mrv_common::MrvReportProof;
 use mrv_common::resolve_storage_version_upgrade;
+use mrv_common::MrvReportProof;
 
 const MAX_VERIFIER_ADJUSTMENTS_PER_PERIOD: u64 = 5;
 const METHODOLOGY_CANONICAL_ID_DOMAIN: &[u8] = b"mrv_methodology_record_v1";
@@ -928,7 +928,7 @@ pub trait MrvRegistry: mrv_common::MrvGovernanceModule {
             self.issuance_lots().contains_key(&lot_id),
             "ENTITY_NOT_FOUND: issuance_lot"
         );
-        let mut record = self.issuance_lots().get(&lot_id).unwrap();
+        let record = self.issuance_lots().get(&lot_id).unwrap();
         require!(
             record.status == b"minted" || record.status == b"retired",
             "lot not eligible for reversal"
@@ -950,16 +950,11 @@ pub trait MrvRegistry: mrv_common::MrvGovernanceModule {
             );
         }
 
-        record.status = ManagedBuffer::from(b"reversed");
-        record.reversed_amount_scaled = reversed_amount_scaled.clone();
-        self.issuance_lots().insert(lot_id.clone(), record);
-        self.mrv_issuance_lot_reversed_event(
-            &lot_id,
-            &IssuanceLotReversedEventPayload {
-                reversed_amount_scaled,
-                replacement_lot_id,
-            },
-        );
+        // Reversal cannot be finalized safely until the registry can prove that
+        // the corresponding buffer contribution has been cancelled. Keep the
+        // existing validation above so malformed requests retain precise errors,
+        // but fail closed before any storage mutation or event emission.
+        sc_panic!("reversal disabled pending buffer reconciliation");
     }
 
     /// Anchors a report proof together with its evidence manifest hash.

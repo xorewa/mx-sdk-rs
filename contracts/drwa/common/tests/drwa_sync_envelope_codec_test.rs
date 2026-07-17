@@ -1,7 +1,7 @@
 use drwa_common::{
-    DRWA_SYNC_ENVELOPE_SCHEMA_VERSION, DRWA_SYNC_ENVELOPE_SCHEMA_VERSION_WITH_RECOVERY,
-    DrwaCallerDomain, DrwaSyncEnvelope, DrwaSyncOperation, DrwaSyncOperationType,
-    build_sync_hook_payload, build_sync_hook_payload_with_recovery_metadata,
+    build_sync_hook_payload, build_sync_hook_payload_with_recovery_metadata, DrwaCallerDomain,
+    DrwaSyncEnvelope, DrwaSyncOperation, DrwaSyncOperationType, DRWA_SYNC_ENVELOPE_SCHEMA_VERSION,
+    DRWA_SYNC_ENVELOPE_SCHEMA_VERSION_WITH_RECOVERY,
 };
 use multiversx_sc::{
     codec::top_encode_to_vec_u8_or_panic,
@@ -171,7 +171,10 @@ fn drwa_sync_hook_payload_fixtures_match_rust_builder_output() {
     let v2_payload = build_sync_hook_payload_with_recovery_metadata(
         &DrwaCallerDomain::RecoveryAdmin,
         &v2_operations,
-        &ManagedBuffer::<StaticApi>::from(&[5u8; 32]),
+        &ManagedBuffer::<StaticApi>::from(
+            decode_hex_fixture("6709cdbf0975b5df54414f15ad4d4af0da4a1887db85754ae4dca6e3e452b47f")
+                .as_slice(),
+        ),
         &ManagedBuffer::<StaticApi>::from(&[6u8; 32]),
         &recovery_scope,
     );
@@ -210,8 +213,8 @@ fn drwa_sync_hook_payload_fixtures_match_rust_builder_output() {
     );
 }
 
-fn build_all_operation_tag_fixture_operations()
--> ManagedVec<StaticApi, DrwaSyncOperation<StaticApi>> {
+fn build_all_operation_tag_fixture_operations(
+) -> ManagedVec<StaticApi, DrwaSyncOperation<StaticApi>> {
     let holder = ManagedAddress::from(&[0xAAu8; 32]);
     let mut operations = ManagedVec::<StaticApi, DrwaSyncOperation<StaticApi>>::new();
 

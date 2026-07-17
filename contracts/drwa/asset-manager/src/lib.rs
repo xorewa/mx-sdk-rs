@@ -8,8 +8,8 @@ pub mod drwa_asset_manager_proxy;
 use drwa_policy_registry::drwa_policy_registry_proxy::DrwaPolicyRegistryProxy;
 
 use drwa_common::{
-    DrwaCallerDomain, DrwaHolderMirror, DrwaSyncEnvelope, DrwaSyncOperation, DrwaSyncOperationType,
-    require_valid_aml_status, require_valid_kyc_status, require_valid_token_id,
+    require_valid_aml_status, require_valid_kyc_status, require_valid_token_id, DrwaCallerDomain,
+    DrwaHolderMirror, DrwaSyncEnvelope, DrwaSyncOperation, DrwaSyncOperationType,
 };
 
 const POLICY_REGISTRY_READ_GAS_BUDGET: u64 = 20_000_000;
@@ -332,6 +332,13 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
                 && current.sanctions_screening_cid == sanctions_screening_cid
                 && current.ubo_parent_entity == ubo_parent_entity
                 && current.ownership_pct == ownership_pct
+                && !self
+                    .holder_policy_version_evaluated(&token_id, &holder)
+                    .is_empty()
+                && self
+                    .holder_policy_version_evaluated(&token_id, &holder)
+                    .get()
+                    == policy_version_evaluated
             {
                 return self.emit_sync_noop_envelope(DrwaCallerDomain::AssetManager);
             }
@@ -364,6 +371,8 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
         self.holder_mirror(&token_id, &holder).set(mirror.clone());
         self.holder_policy_version(&token_id, &holder)
             .set(next_version);
+        self.holder_policy_version_evaluated(&token_id, &holder)
+            .set(policy_version_evaluated);
         self.drwa_holder_compliance_event(
             &token_id,
             &holder,
@@ -665,6 +674,17 @@ pub trait DrwaAssetManager: drwa_common::DrwaGovernanceModule {
     /// used for staleness detection.
     #[storage_mapper("holderPolicyVersion")]
     fn holder_policy_version(
+        &self,
+        token_id: &ManagedBuffer,
+        holder: &ManagedAddress,
+    ) -> SingleValueMapper<u64>;
+
+    /// Last token-policy version against which this holder mirror was
+    /// evaluated. This is intentionally separate from the holder operation
+    /// counter because token policy and holder updates advance independently.
+    #[view(getHolderPolicyVersionEvaluated)]
+    #[storage_mapper("holderPolicyVersionEvaluated")]
+    fn holder_policy_version_evaluated(
         &self,
         token_id: &ManagedBuffer,
         holder: &ManagedAddress,

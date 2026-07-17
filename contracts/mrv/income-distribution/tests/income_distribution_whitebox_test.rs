@@ -681,7 +681,7 @@ fn fund_distribution_expiry_too_far_fails() {
                 ManagedBuffer::from(&merkle_root[..]),
                 100u64,
                 ManagedBuffer::from(b"bafymanifest"),
-                2_291u64, // current(100) + 2190 = 2290, so 2291 is too far
+                26_381u64, // current(100) + 26,280 = 26,380, so 26,381 is too far
             );
         });
 }
@@ -1313,10 +1313,9 @@ fn pause_distribution_and_unpause() {
         .query()
         .to(SC_ADDRESS)
         .whitebox(mrv_income_distribution::contract_obj, |sc| {
-            assert!(
-                sc.distribution_paused(&ManagedBuffer::from(b"dist-pause-test"))
-                    .get()
-            );
+            assert!(sc
+                .distribution_paused(&ManagedBuffer::from(b"dist-pause-test"))
+                .get());
         });
 
     // Claim while paused fails
@@ -1349,10 +1348,9 @@ fn pause_distribution_and_unpause() {
         .query()
         .to(SC_ADDRESS)
         .whitebox(mrv_income_distribution::contract_obj, |sc| {
-            assert!(
-                !sc.distribution_paused(&ManagedBuffer::from(b"dist-pause-test"))
-                    .get()
-            );
+            assert!(!sc
+                .distribution_paused(&ManagedBuffer::from(b"dist-pause-test"))
+                .get());
         });
 
     // Claim after unpause succeeds (with valid proof)

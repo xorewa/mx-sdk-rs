@@ -644,8 +644,8 @@ fn configure_gsoc_governance(world: &mut ScenarioWorld) {
         });
 }
 
-fn make_bundle_ref<M: multiversx_sc::api::ManagedTypeApi>()
--> mrv_carbon_credit::ExecutionBundleRef<M> {
+fn make_bundle_ref<M: multiversx_sc::api::ManagedTypeApi>(
+) -> mrv_carbon_credit::ExecutionBundleRef<M> {
     mrv_carbon_credit::ExecutionBundleRef {
         science_service_image_digest: ManagedBuffer::from(b"sha256:image-010"),
         parameter_pack_hash: ManagedBuffer::from(b"sha256:param-010"),
@@ -1052,6 +1052,10 @@ fn carbon_credit_records_issuance_lot_reversal_rs() {
         .from(GOVERNANCE)
         .to(SC_ADDRESS)
         .payment(Payment::try_new(DVCU_TOKEN, 0, 3_000u64).unwrap())
+        .returns(ExpectError(
+            4u64,
+            "reversal disabled pending buffer reconciliation",
+        ))
         .whitebox(mrv_carbon_credit::contract_obj, |sc| {
             sc.record_issuance_lot_reversal(
                 ManagedBuffer::from(b"lot-reversal-001"),
@@ -1064,18 +1068,17 @@ fn carbon_credit_records_issuance_lot_reversal_rs() {
         .query()
         .to(SC_ADDRESS)
         .whitebox(mrv_carbon_credit::contract_obj, |sc| {
-            let amount = sc
+            assert!(sc
                 .get_recorded_issuance_lot_reversal(ManagedBuffer::from(b"lot-reversal-001"))
                 .into_option()
-                .unwrap();
-            assert_eq!(amount, BigUint::from(3_000u64));
+                .is_none());
             assert_eq!(sc.total_dvcu_minted().get(), BigUint::from(9_500u64));
-            assert_eq!(sc.total_dvcu_burned().get(), BigUint::from(3_000u64));
+            assert_eq!(sc.total_dvcu_burned().get(), BigUint::zero());
         });
 
     world
         .check_account(GOVERNANCE)
-        .esdt_balance(DVCU_TOKEN, BigUint::from(6_500u64));
+        .esdt_balance(DVCU_TOKEN, BigUint::from(9_500u64));
 }
 
 #[test]
@@ -1473,10 +1476,9 @@ fn carbon_credit_gsoc_retirement_rs() {
         .query()
         .to(SC_ADDRESS)
         .whitebox(mrv_carbon_credit::contract_obj, |sc| {
-            assert!(
-                sc.gsoc_retired_serials()
-                    .contains(&ManagedBuffer::from(b"ITMO-RET"))
-            );
+            assert!(sc
+                .gsoc_retired_serials()
+                .contains(&ManagedBuffer::from(b"ITMO-RET")));
             assert_eq!(sc.total_dgsc_minted().get(), BigUint::from(95_000u64));
             assert_eq!(sc.total_dgsc_burned().get(), BigUint::from(95_000u64));
             assert_eq!(

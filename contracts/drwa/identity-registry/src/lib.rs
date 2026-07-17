@@ -6,8 +6,8 @@ multiversx_sc::derive_imports!();
 pub mod drwa_identity_registry_proxy;
 
 use drwa_common::{
-    DrwaCallerDomain, DrwaHolderProfile, DrwaSyncEnvelope, DrwaSyncOperation,
-    DrwaSyncOperationType, push_len_prefixed, require_valid_aml_status, require_valid_kyc_status,
+    push_len_prefixed, require_valid_aml_status, require_valid_kyc_status, DrwaCallerDomain,
+    DrwaHolderProfile, DrwaSyncEnvelope, DrwaSyncOperation, DrwaSyncOperationType,
 };
 
 const DEFAULT_IDENTITY_VALIDITY_ROUNDS: u64 = 10_000;
@@ -314,9 +314,9 @@ pub trait DrwaIdentityRegistry: drwa_common::DrwaGovernanceModule {
             return self.emit_sync_noop_envelope(DrwaCallerDomain::IdentityRegistry);
         }
 
-        self.identity(&subject).set(erased);
+        self.identity(&subject).set(erased.clone());
         self.identity_privacy_commitment(&subject).clear();
-        let envelope = self.emit_holder_mirror_delete_sync(subject.clone());
+        let envelope = self.emit_holder_profile_sync(subject.clone(), &erased);
         self.drwa_identity_erased_event(&subject);
         envelope
     }
@@ -411,30 +411,6 @@ pub trait DrwaIdentityRegistry: drwa_common::DrwaGovernanceModule {
             holder: subject.clone(),
             version: next_version,
             body,
-        });
-
-        self.emit_sync_envelope(DrwaCallerDomain::IdentityRegistry, operations)
-    }
-
-    fn emit_holder_mirror_delete_sync(
-        &self,
-        subject: ManagedAddress,
-    ) -> DrwaSyncEnvelope<Self::Api> {
-        let next_version = self
-            .holder_profile_version(&subject)
-            .get()
-            .checked_add(1)
-            .unwrap_or_else(|| sc_panic!("version overflow"));
-
-        self.holder_profile_version(&subject).set(next_version);
-
-        let mut operations = ManagedVec::new();
-        operations.push(DrwaSyncOperation {
-            operation_type: DrwaSyncOperationType::HolderMirrorDelete,
-            token_id: ManagedBuffer::new(),
-            holder: subject,
-            version: next_version,
-            body: ManagedBuffer::new(),
         });
 
         self.emit_sync_envelope(DrwaCallerDomain::IdentityRegistry, operations)

@@ -1432,9 +1432,17 @@ fn mrv_registry_tracks_issuance_lifecycle() {
                 ManagedBuffer::new(),
             );
             sc.retire_issuance_lot(ManagedBuffer::from(LOT_ID));
-            // B-01: replacement_lot_id is empty here; the full
-            // forward/back pointer lineage is exercised by the dedicated
-            // `mrv_registry_accepts_full_replacement_lineage` test.
+        });
+
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(SC_ADDRESS)
+        .returns(ExpectError(
+            4u64,
+            "reversal disabled pending buffer reconciliation",
+        ))
+        .whitebox(mrv_registry::contract_obj, |sc| {
             sc.reverse_issuance_lot(
                 ManagedBuffer::from(LOT_ID),
                 BigUint::from(20_000u64),
@@ -1450,10 +1458,10 @@ fn mrv_registry_tracks_issuance_lifecycle() {
                 .get_issuance_lot(ManagedBuffer::from(LOT_ID))
                 .into_option()
                 .unwrap();
-            assert_eq!(lot.status.to_boxed_bytes().as_slice(), b"reversed");
+            assert_eq!(lot.status.to_boxed_bytes().as_slice(), b"retired");
             assert_eq!(lot.vintage, 2026);
             assert_eq!(lot.quantity_scaled, BigUint::from(105_000u64));
-            assert_eq!(lot.reversed_amount_scaled, BigUint::from(20_000u64));
+            assert_eq!(lot.reversed_amount_scaled, BigUint::zero());
             // replacement_for_lot_id is set at creation, not during reversal
             // The reversal's replacement_lot_id is only emitted in the event payload
             assert!(lot.replacement_for_lot_id.is_empty());
@@ -1596,24 +1604,22 @@ fn mrv_registry_allows_governance_amendment_of_report_proof() {
                 REPORT_HASH
             );
             assert_eq!(prior_proof.methodology_version, 1u64);
-            assert!(
-                sc.get_report_id_by_season(
+            assert!(sc
+                .get_report_id_by_season(
                     ManagedBuffer::from(TENANT_ID),
                     ManagedBuffer::from(FARM_ID),
                     ManagedBuffer::from(b"season-public-001-amended"),
                 )
                 .into_option()
-                .is_some()
-            );
-            assert!(
-                sc.get_report_id_by_season(
+                .is_some());
+            assert!(sc
+                .get_report_id_by_season(
                     ManagedBuffer::from(TENANT_ID),
                     ManagedBuffer::from(FARM_ID),
                     ManagedBuffer::from(SEASON_ID),
                 )
                 .into_option()
-                .is_none()
-            );
+                .is_none());
         });
 }
 
@@ -3011,7 +3017,17 @@ fn mrv_registry_accepts_full_replacement_lineage() {
                 BigUint::from(80_000u64),
                 ManagedBuffer::from(LOT_ID),
             );
-            // Reverse A citing B — lineage is consistent.
+        });
+
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(SC_ADDRESS)
+        .returns(ExpectError(
+            4u64,
+            "reversal disabled pending buffer reconciliation",
+        ))
+        .whitebox(mrv_registry::contract_obj, |sc| {
             sc.reverse_issuance_lot(
                 ManagedBuffer::from(LOT_ID),
                 BigUint::from(20_000u64),
@@ -3027,8 +3043,8 @@ fn mrv_registry_accepts_full_replacement_lineage() {
                 .get_issuance_lot(ManagedBuffer::from(LOT_ID))
                 .into_option()
                 .unwrap();
-            assert_eq!(original.status.to_boxed_bytes().as_slice(), b"reversed");
-            assert_eq!(original.reversed_amount_scaled, BigUint::from(20_000u64));
+            assert_eq!(original.status.to_boxed_bytes().as_slice(), b"minted");
+            assert_eq!(original.reversed_amount_scaled, BigUint::zero());
             let replacement = sc
                 .get_issuance_lot(ManagedBuffer::from(b"lot-replacement"))
                 .into_option()
