@@ -1,4 +1,7 @@
-use drwa_auth_admin::DrwaAuthAdmin;
+use drwa_auth_admin::{
+    DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS, DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR,
+    DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS, DrwaAuthAdmin,
+};
 use drwa_common::{DrwaCallerDomain, DrwaSyncOperationType, set_drwa_sync_hook_test_result};
 use multiversx_sc::types::ManagedBuffer;
 use multiversx_sc_scenario::imports::*;
@@ -19,14 +22,14 @@ const AUTH_ADMIN_HEX_V2: &[u8] =
 const AUTH_ADMIN_BECH32: &[u8] = b"erd1qqqqqqqqqqqqqpgqf97pgqdy0tstwauxu09kszz020hp5kgqqzzsscqtww";
 
 // B-03 (AUD-003): test scaffolding must honor the procedure-floor 3-of-5
-// and the mandatory 24h/48h timelocks. Proposal TTL remains round-based,
+// and the mandatory build-profile timelocks. Proposal TTL remains round-based,
 // while the security timelock is timestamp-based so round-duration changes
 // cannot shorten the wall-clock delay.
 const TEST_INIT_QUORUM: usize = 3;
 const TEST_INIT_TTL_ROUNDS: u64 = 40_000;
 const TEST_POST_TIMELOCK_ROUND: u64 = 14_401;
-const TEST_DEFAULT_TIMELOCK_SECONDS: u64 = 24 * 60 * 60;
-const TEST_RECOVERY_TIMELOCK_SECONDS: u64 = 48 * 60 * 60;
+const TEST_DEFAULT_TIMELOCK_SECONDS: u64 = DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS;
+const TEST_RECOVERY_TIMELOCK_SECONDS: u64 = DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS;
 
 fn world() -> ScenarioWorld {
     let mut world = ScenarioWorld::new();
@@ -737,10 +740,7 @@ fn drwa_auth_admin_removed_signer_signature_no_longer_counts() {
         .tx()
         .from(SIGNER_ONE)
         .to(ADMIN_SC)
-        .returns(ExpectError(
-            4u64,
-            "timelock not elapsed: must wait 24h after quorum (48h for recovery-admin)",
-        ))
+        .returns(ExpectError(4u64, DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR))
         .whitebox(drwa_auth_admin::contract_obj, |sc| {
             let _ = sc.perform_action(guarded_action);
         });
@@ -910,10 +910,7 @@ fn drwa_auth_admin_upgrade_migrates_pending_action_indexes_and_restarts_timelock
         .tx()
         .from(SIGNER_ONE)
         .to(ADMIN_SC)
-        .returns(ExpectError(
-            4u64,
-            "timelock not elapsed: must wait 24h after quorum (48h for recovery-admin)",
-        ))
+        .returns(ExpectError(4u64, DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR))
         .whitebox(drwa_auth_admin::contract_obj, |sc| {
             let _ = sc.perform_action(action_id);
         });
@@ -1173,10 +1170,7 @@ fn drwa_auth_admin_b03_rejects_perform_before_timelock_elapsed() {
         .tx()
         .from(SIGNER_ONE)
         .to(ADMIN_SC)
-        .returns(ExpectError(
-            4u64,
-            "timelock not elapsed: must wait 24h after quorum (48h for recovery-admin)",
-        ))
+        .returns(ExpectError(4u64, DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR))
         .whitebox(drwa_auth_admin::contract_obj, |sc| {
             let _ = sc.perform_action(action_id);
         });
@@ -1214,7 +1208,7 @@ fn drwa_auth_admin_c213_exposes_no_emergency_override_policy() {
 }
 
 #[test]
-fn drwa_auth_admin_b03_recovery_admin_domain_uses_48h_timelock() {
+fn drwa_auth_admin_b03_recovery_admin_domain_uses_longer_timelock() {
     let mut world = world();
     deploy(&mut world);
 
@@ -1231,7 +1225,7 @@ fn drwa_auth_admin_b03_recovery_admin_domain_uses_48h_timelock() {
         });
     sign_to_reach_quorum(&mut world, action_id);
 
-    // 24h is NOT enough for recovery-admin.
+    // The ordinary-action delay is not enough for recovery-admin.
     world
         .current_block()
         .block_timestamp_seconds(TEST_DEFAULT_TIMELOCK_SECONDS);
@@ -1239,15 +1233,12 @@ fn drwa_auth_admin_b03_recovery_admin_domain_uses_48h_timelock() {
         .tx()
         .from(SIGNER_ONE)
         .to(ADMIN_SC)
-        .returns(ExpectError(
-            4u64,
-            "timelock not elapsed: must wait 24h after quorum (48h for recovery-admin)",
-        ))
+        .returns(ExpectError(4u64, DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR))
         .whitebox(drwa_auth_admin::contract_obj, |sc| {
             let _ = sc.perform_action(action_id);
         });
 
-    // 48h window crossed → succeeds.
+    // The longer recovery-admin window crossed → succeeds.
     advance_past_recovery_timelock(&mut world);
     world
         .tx()
@@ -1314,10 +1305,7 @@ fn drwa_auth_admin_b03_unsign_below_quorum_restarts_timelock() {
         .tx()
         .from(SIGNER_ONE)
         .to(ADMIN_SC)
-        .returns(ExpectError(
-            4u64,
-            "timelock not elapsed: must wait 24h after quorum (48h for recovery-admin)",
-        ))
+        .returns(ExpectError(4u64, DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR))
         .whitebox(drwa_auth_admin::contract_obj, |sc| {
             let _ = sc.perform_action(action_id);
         });

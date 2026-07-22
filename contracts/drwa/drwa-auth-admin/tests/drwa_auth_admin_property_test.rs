@@ -1,4 +1,7 @@
-use drwa_auth_admin::DrwaAuthAdmin;
+use drwa_auth_admin::{
+    DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS, DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR,
+    DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS, DrwaAuthAdmin,
+};
 use multiversx_sc::types::ManagedBuffer;
 use multiversx_sc_scenario::imports::*;
 
@@ -16,9 +19,9 @@ const AUTH_ADMIN_HEX_V1: &[u8] =
 
 // B-03: proposal TTL is still round-based, but the security timelock is
 // timestamp-based so future round-duration changes cannot shorten the
-// 24-hour delay.
+// selected build-profile delay.
 const TEST_TTL_ROUNDS: u64 = 20_000;
-const TEST_TIMELOCK_SECONDS: u64 = 24 * 60 * 60;
+const TEST_TIMELOCK_SECONDS: u64 = DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS;
 
 fn world() -> ScenarioWorld {
     let mut world = ScenarioWorld::new();
@@ -97,15 +100,12 @@ fn drwa_auth_admin_quorum_threshold_property() {
             .tx()
             .from(SIGNER_ONE)
             .to(ADMIN_SC)
-            .returns(ExpectError(
-                4u64,
-                "timelock not elapsed: must wait 24h after quorum (48h for recovery-admin)",
-            ))
+            .returns(ExpectError(4u64, DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR))
             .whitebox(drwa_auth_admin::contract_obj, |sc| {
                 let _ = sc.perform_action(action_id);
             });
 
-        // Advance past the 24h timelock window and execute.
+        // Advance past the selected build-profile timelock window and execute.
         world
             .current_block()
             .block_timestamp_seconds(TEST_TIMELOCK_SECONDS);
@@ -126,6 +126,21 @@ fn drwa_auth_admin_quorum_threshold_property() {
                 let domain = ManagedBuffer::from(AUTH_ADMIN_DOMAIN);
                 assert_eq!(sc.authorized_caller_version(&domain).get(), 1);
             });
+    }
+}
+
+#[test]
+fn drwa_auth_admin_timelock_profile_is_explicit() {
+    #[cfg(not(feature = "local-test-timelock"))]
+    {
+        assert_eq!(DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS, 24 * 60 * 60);
+        assert_eq!(DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS, 48 * 60 * 60);
+    }
+
+    #[cfg(feature = "local-test-timelock")]
+    {
+        assert_eq!(DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS, 5 * 60);
+        assert_eq!(DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS, 10 * 60);
     }
 }
 

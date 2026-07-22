@@ -8,6 +8,11 @@ authors = ["Dharitri <dev@dharitri.org>"]
 [lib]
 path = "src/lib.rs"
 
+[features]
+# Produces a distinct, disposable local-devnet artifact with accelerated
+# governance delays. Never enable this for public Devnet, Testnet, or Mainnet.
+local-test-timelock = []
+
 [dependencies.multiversx-sc]
 workspace = true
 

@@ -86,8 +86,10 @@ impl<M: ManagedTypeApi> DrwaAuthAction<M> {
 //
 // The approved `DRWA-Key-Rotation-Procedures.md` requires:
 //   - fixed 3-of-5 quorum for signer add / revoke
-//   - 24-hour timelock after threshold is reached for signer change
-//   - 48-hour timelock for recovery-admin rotation
+//   - production profile: 24-hour timelock after threshold for signer changes
+//     and 48-hour timelock for recovery-admin rotation;
+//   - explicitly opt-in local-test profile: 5 minutes and 10 minutes,
+//     respectively, for disposable local-devnet E2E testing only.
 //   - no immediate emergency override exists in this contract. Incident
 //     response must still pass through the quorum + timelock path unless a
 //     separately audited emergency-governor contract is deployed and accepted
@@ -107,15 +109,26 @@ const DRWA_AUTH_MIN_SIGNER_COUNT: usize = 5;
 /// Minimum quorum. See `DRWA_AUTH_MIN_SIGNER_COUNT`.
 const DRWA_AUTH_MIN_QUORUM: usize = 3;
 
-/// Wall-clock 24-hour timelock in seconds. Applied by default to every
-/// admin action. This is intentionally timestamp-based, not round-based,
-/// so a future round-duration change cannot silently shorten governance
-/// delay windows.
-const DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS: u64 = 24 * 60 * 60;
+/// Production wall-clock timelocks. The opt-in `local-test-timelock` feature
+/// exists solely for a disposable local devnet artifact; it must never be
+/// used for public Devnet, Testnet, or Mainnet deployments.
+#[cfg(not(feature = "local-test-timelock"))]
+pub const DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS: u64 = 24 * 60 * 60;
+#[cfg(not(feature = "local-test-timelock"))]
+pub const DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS: u64 = 48 * 60 * 60;
+#[cfg(not(feature = "local-test-timelock"))]
+pub const DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR: &str =
+    "timelock not elapsed: must wait 24h after quorum (48h for recovery-admin)";
 
-/// Wall-clock 48-hour timelock in seconds. Applied when the action targets
-/// the `recovery-admin` caller domain.
-const DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS: u64 = 48 * 60 * 60;
+/// Local-only accelerated values. This feature changes the WASM code hash and
+/// must be deployed and registered separately from the production artifact.
+#[cfg(feature = "local-test-timelock")]
+pub const DRWA_AUTH_TIMELOCK_DEFAULT_SECONDS: u64 = 5 * 60;
+#[cfg(feature = "local-test-timelock")]
+pub const DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS: u64 = 10 * 60;
+#[cfg(feature = "local-test-timelock")]
+pub const DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR: &str =
+    "timelock not elapsed: must wait 5m after quorum (10m for recovery-admin)";
 const DRWA_AUTH_STORAGE_VERSION: u32 = 3;
 const DRWA_EMERGENCY_OVERRIDE_POLICY: &[u8] =
     b"not_supported: all auth-admin actions require quorum and timelock";
@@ -219,8 +232,8 @@ pub trait DrwaAuthAdmin {
         require!(!domain.is_empty(), "domain must not be empty");
         self.require_valid_authorized_caller(&new_address);
         // B-03: caller-address updates for the recovery-admin domain carry a
-        // 48-hour timelock per procedure Sec. 5.2 / Sec. 6.2. All other domains use
-        // the default 24-hour delay.
+        // The recovery-admin slot uses the longer selected-profile timelock;
+        // all other domains use the selected-profile default delay.
         let timelock_seconds = if domain == b"recovery_admin" {
             DRWA_AUTH_TIMELOCK_RECOVERY_ADMIN_SECONDS
         } else {
@@ -315,7 +328,7 @@ pub trait DrwaAuthAdmin {
         // initial propose. If quorum is later lost via `unsign` the
         // stored timestamp is cleared so a subsequent re-approval restarts
         // the timelock. This matches the procedure-doc intent of
-        // "24-hour timelock AFTER threshold reached."
+        // The timelock starts only after the threshold is reached.
         let current_count = self.current_action_signer_count(action_id);
         if self
             .action_approved_at_timestamp_seconds(action_id)
@@ -452,7 +465,7 @@ pub trait DrwaAuthAdmin {
             .unwrap_or_else(|| sc_panic!("action timelock timestamp overflow"));
         require!(
             current_timestamp >= executable_timestamp,
-            "timelock not elapsed: must wait 24h after quorum (48h for recovery-admin)"
+            DRWA_AUTH_TIMELOCK_NOT_ELAPSED_ERROR
         );
 
         let action = self.actions(action_id).get();
@@ -706,7 +719,7 @@ pub trait DrwaAuthAdmin {
     }
 
     /// Legacy shim: proposals that don't specify a timelock use the
-    /// default 24-hour delay. All current in-tree callers go through
+    /// selected default delay. All current in-tree callers go through
     /// `create_action_with_timelock` directly; this helper remains for
     /// backward-compat with any external code that calls it.
     fn create_action(&self, action: DrwaAuthAction<Self::Api>) -> u64 {
