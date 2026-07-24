@@ -443,7 +443,9 @@ fn mrv_buffer_pool_deposit_and_replenishment_flow() {
             );
         });
 
-    world.current_block().block_epoch(1_500u64);
+    // The buffer-pool contract permits one replenishment per project every
+    // 6,480 epochs (90 days at the configured 20-minute epoch duration).
+    world.current_block().block_epoch(6_480u64);
 
     world
         .tx()
