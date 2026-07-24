@@ -1,5 +1,5 @@
 use drwa_common::{
-    set_drwa_sync_hook_test_result, DrwaCallerDomain, DrwaGovernanceModule, DrwaSyncOperationType,
+    DrwaCallerDomain, DrwaGovernanceModule, DrwaSyncOperationType, set_drwa_sync_hook_test_result,
 };
 use drwa_identity_registry::DrwaIdentityRegistry;
 use multiversx_sc::types::ManagedBuffer;
@@ -411,9 +411,10 @@ fn identity_registry_sync_hook_failure_reverts_identity_registration() {
         .to(SC_ADDRESS)
         .whitebox(drwa_identity_registry::contract_obj, |sc| {
             assert!(sc.identity(&ISSUER.to_managed_address()).is_empty());
-            assert!(sc
-                .holder_profile_version(&ISSUER.to_managed_address())
-                .is_empty());
+            assert!(
+                sc.holder_profile_version(&ISSUER.to_managed_address())
+                    .is_empty()
+            );
         });
 }
 
@@ -600,9 +601,10 @@ fn identity_registry_erase_identity_clears_privacy_commitment() {
                 ManagedBuffer::from(b"SG"),
                 ManagedBuffer::from(b"SPV"),
             );
-            assert!(!sc
-                .identity_privacy_commitment(&ISSUER.to_managed_address())
-                .is_empty());
+            assert!(
+                !sc.identity_privacy_commitment(&ISSUER.to_managed_address())
+                    .is_empty()
+            );
         },
     );
 
@@ -617,9 +619,10 @@ fn identity_registry_erase_identity_clears_privacy_commitment() {
         .query()
         .to(SC_ADDRESS)
         .whitebox(drwa_identity_registry::contract_obj, |sc| {
-            assert!(sc
-                .identity_privacy_commitment(&ISSUER.to_managed_address())
-                .is_empty());
+            assert!(
+                sc.identity_privacy_commitment(&ISSUER.to_managed_address())
+                    .is_empty()
+            );
         });
 }
 

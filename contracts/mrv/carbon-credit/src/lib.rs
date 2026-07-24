@@ -1186,7 +1186,7 @@ pub trait CarbonCreditModule: mrv_common::MrvGovernanceModule {
     /// Project-scoped GSOC serial index used for canonical reserve-proof hashing.
     #[storage_mapper("projectGsocSerials")]
     fn project_gsoc_serials(&self, project_id: &ManagedBuffer)
-        -> UnorderedSetMapper<ManagedBuffer>;
+    -> UnorderedSetMapper<ManagedBuffer>;
 
     /// Legacy canonical GSOC serial inventory hash cache per project.
     /// Cleared on every mutation that affects the project's serial set.

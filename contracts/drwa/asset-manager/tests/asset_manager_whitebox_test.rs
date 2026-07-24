@@ -1,6 +1,6 @@
 use drwa_asset_manager::DrwaAssetManager;
 use drwa_common::{
-    set_drwa_sync_hook_test_result, DrwaCallerDomain, DrwaGovernanceModule, DrwaSyncOperationType,
+    DrwaCallerDomain, DrwaGovernanceModule, DrwaSyncOperationType, set_drwa_sync_hook_test_result,
 };
 use drwa_policy_registry::DrwaPolicyRegistry;
 use multiversx_sc::types::ManagedBuffer;
@@ -392,9 +392,10 @@ fn asset_manager_sync_hook_failure_reverts_holder_policy_marker() {
             let holder = HOLDER.to_managed_address();
             assert!(sc.holder_mirror(&token_id, &holder).is_empty());
             assert!(sc.holder_policy_version(&token_id, &holder).is_empty());
-            assert!(sc
-                .holder_policy_version_evaluated(&token_id, &holder)
-                .is_empty());
+            assert!(
+                sc.holder_policy_version_evaluated(&token_id, &holder)
+                    .is_empty()
+            );
         });
 }
 
@@ -732,9 +733,11 @@ fn asset_manager_identical_holder_sync_is_noop() {
                 .get(0)
                 .body
                 .with_buffer_contents(|body| {
-                    assert!(core::str::from_utf8(body)
-                        .unwrap()
-                        .contains("\"policy_version_evaluated\":2"));
+                    assert!(
+                        core::str::from_utf8(body)
+                            .unwrap()
+                            .contains("\"policy_version_evaluated\":2")
+                    );
                 });
             assert_eq!(
                 sc.holder_policy_version_evaluated(
@@ -1077,9 +1080,11 @@ fn wind_down_complete_keeps_transfer_lock_and_rejects_cancel() {
             let body_bytes = body.to_boxed_bytes();
             let body_slice = body_bytes.as_slice();
             assert_eq!(body_slice[0], 0x01);
-            assert!(core::str::from_utf8(&body_slice[1..])
-                .unwrap()
-                .contains("\"wind_down_status\":\"completed\""));
+            assert!(
+                core::str::from_utf8(&body_slice[1..])
+                    .unwrap()
+                    .contains("\"wind_down_status\":\"completed\"")
+            );
         });
 
     world

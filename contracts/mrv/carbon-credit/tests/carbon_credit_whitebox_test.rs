@@ -644,8 +644,8 @@ fn configure_gsoc_governance(world: &mut ScenarioWorld) {
         });
 }
 
-fn make_bundle_ref<M: multiversx_sc::api::ManagedTypeApi>(
-) -> mrv_carbon_credit::ExecutionBundleRef<M> {
+fn make_bundle_ref<M: multiversx_sc::api::ManagedTypeApi>()
+-> mrv_carbon_credit::ExecutionBundleRef<M> {
     mrv_carbon_credit::ExecutionBundleRef {
         science_service_image_digest: ManagedBuffer::from(b"sha256:image-010"),
         parameter_pack_hash: ManagedBuffer::from(b"sha256:param-010"),
@@ -1068,10 +1068,11 @@ fn carbon_credit_records_issuance_lot_reversal_rs() {
         .query()
         .to(SC_ADDRESS)
         .whitebox(mrv_carbon_credit::contract_obj, |sc| {
-            assert!(sc
-                .get_recorded_issuance_lot_reversal(ManagedBuffer::from(b"lot-reversal-001"))
-                .into_option()
-                .is_none());
+            assert!(
+                sc.get_recorded_issuance_lot_reversal(ManagedBuffer::from(b"lot-reversal-001"))
+                    .into_option()
+                    .is_none()
+            );
             assert_eq!(sc.total_dvcu_minted().get(), BigUint::from(9_500u64));
             assert_eq!(sc.total_dvcu_burned().get(), BigUint::zero());
         });
@@ -1476,9 +1477,10 @@ fn carbon_credit_gsoc_retirement_rs() {
         .query()
         .to(SC_ADDRESS)
         .whitebox(mrv_carbon_credit::contract_obj, |sc| {
-            assert!(sc
-                .gsoc_retired_serials()
-                .contains(&ManagedBuffer::from(b"ITMO-RET")));
+            assert!(
+                sc.gsoc_retired_serials()
+                    .contains(&ManagedBuffer::from(b"ITMO-RET"))
+            );
             assert_eq!(sc.total_dgsc_minted().get(), BigUint::from(95_000u64));
             assert_eq!(sc.total_dgsc_burned().get(), BigUint::from(95_000u64));
             assert_eq!(

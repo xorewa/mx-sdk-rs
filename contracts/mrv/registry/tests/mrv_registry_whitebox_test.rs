@@ -1604,22 +1604,24 @@ fn mrv_registry_allows_governance_amendment_of_report_proof() {
                 REPORT_HASH
             );
             assert_eq!(prior_proof.methodology_version, 1u64);
-            assert!(sc
-                .get_report_id_by_season(
+            assert!(
+                sc.get_report_id_by_season(
                     ManagedBuffer::from(TENANT_ID),
                     ManagedBuffer::from(FARM_ID),
                     ManagedBuffer::from(b"season-public-001-amended"),
                 )
                 .into_option()
-                .is_some());
-            assert!(sc
-                .get_report_id_by_season(
+                .is_some()
+            );
+            assert!(
+                sc.get_report_id_by_season(
                     ManagedBuffer::from(TENANT_ID),
                     ManagedBuffer::from(FARM_ID),
                     ManagedBuffer::from(SEASON_ID),
                 )
                 .into_option()
-                .is_none());
+                .is_none()
+            );
         });
 }
 

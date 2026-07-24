@@ -6,8 +6,8 @@ multiversx_sc::derive_imports!();
 pub mod drwa_identity_registry_proxy;
 
 use drwa_common::{
-    push_len_prefixed, require_valid_aml_status, require_valid_kyc_status, DrwaCallerDomain,
-    DrwaHolderProfile, DrwaSyncEnvelope, DrwaSyncOperation, DrwaSyncOperationType,
+    DrwaCallerDomain, DrwaHolderProfile, DrwaSyncEnvelope, DrwaSyncOperation,
+    DrwaSyncOperationType, push_len_prefixed, require_valid_aml_status, require_valid_kyc_status,
 };
 
 const DEFAULT_IDENTITY_VALIDITY_ROUNDS: u64 = 10_000;

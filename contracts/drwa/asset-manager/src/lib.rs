@@ -8,8 +8,8 @@ pub mod drwa_asset_manager_proxy;
 use drwa_policy_registry::drwa_policy_registry_proxy::DrwaPolicyRegistryProxy;
 
 use drwa_common::{
-    require_valid_aml_status, require_valid_kyc_status, require_valid_token_id, DrwaCallerDomain,
-    DrwaHolderMirror, DrwaSyncEnvelope, DrwaSyncOperation, DrwaSyncOperationType,
+    DrwaCallerDomain, DrwaHolderMirror, DrwaSyncEnvelope, DrwaSyncOperation, DrwaSyncOperationType,
+    require_valid_aml_status, require_valid_kyc_status, require_valid_token_id,
 };
 
 const POLICY_REGISTRY_READ_GAS_BUDGET: u64 = 20_000_000;

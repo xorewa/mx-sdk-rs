@@ -5,8 +5,8 @@ pub mod governance_proxy;
 multiversx_sc::imports!();
 multiversx_sc::derive_imports!();
 
-use mrv_common::resolve_storage_version_upgrade;
 use mrv_common::MrvReportProof;
+use mrv_common::resolve_storage_version_upgrade;
 
 const MAX_VERIFIER_ADJUSTMENTS_PER_PERIOD: u64 = 5;
 const METHODOLOGY_CANONICAL_ID_DOMAIN: &[u8] = b"mrv_methodology_record_v1";
