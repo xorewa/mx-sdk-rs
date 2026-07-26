@@ -3,7 +3,7 @@ name: Plotter CI
 on:
   push:
     branches:
-      - master
+      - NewArc
   pull_request:
 
 permissions:

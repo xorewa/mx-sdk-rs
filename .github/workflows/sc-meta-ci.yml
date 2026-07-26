@@ -3,7 +3,7 @@ name: sc-meta CI
 on:
   push:
     branches:
-      - master
+      - NewArc
   pull_request:
 
 permissions:

@@ -3,7 +3,7 @@ name: LLDB
 on:
   push:
     branches:
-      - master
+      - NewArc
   pull_request:
   workflow_dispatch:
 

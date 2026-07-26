@@ -3,7 +3,7 @@ name: Interactor Tests
 on:
   push:
     branches:
-      - master
+      - NewArc
   pull_request:
   workflow_dispatch:
 
