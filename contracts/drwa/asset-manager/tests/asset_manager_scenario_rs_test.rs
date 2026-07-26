@@ -1,4 +1,3 @@
-use drwa_policy_registry;
 use multiversx_sc_scenario::imports::*;
 
 fn world() -> ScenarioWorld {

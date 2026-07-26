@@ -534,7 +534,7 @@ pub trait DrwaAuthAdmin {
                 // `DRWA_AUTH_MIN_SIGNER_COUNT` signers regardless of what
                 // the configured quorum would otherwise permit.
                 require!(
-                    self.signers().len() - 1 >= DRWA_AUTH_MIN_SIGNER_COUNT,
+                    self.signers().len() > DRWA_AUTH_MIN_SIGNER_COUNT,
                     "cannot drop signer count below procedure floor (3-of-5)"
                 );
                 self.signers().swap_remove(&signer);

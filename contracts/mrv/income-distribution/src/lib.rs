@@ -454,11 +454,7 @@ pub trait IncomeDistribution: mrv_common::MrvGovernanceModule {
         match self.distributions().get(&distribution_id) {
             Some(dist) => {
                 let current_epoch = self.blockchain().get_block_epoch();
-                if current_epoch >= dist.expiry_epoch {
-                    0u64
-                } else {
-                    dist.expiry_epoch - current_epoch
-                }
+                dist.expiry_epoch.saturating_sub(current_epoch)
             }
             None => 0u64,
         }

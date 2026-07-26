@@ -51,25 +51,23 @@ fn deploy_with_policy_registry(world: &mut ScenarioWorld) {
         .set_policy_registry_address(POLICY_SC_ADDRESS)
         .run();
 
-    for token_id in [TOKEN_ID] {
-        world
-            .tx()
-            .from(GOVERNANCE)
-            .to(POLICY_SC_ADDRESS)
-            .typed(DrwaPolicyRegistryProxy)
-            .set_token_policy(
-                ManagedBuffer::from(token_id),
-                true,
-                false,
-                false,
-                false,
-                ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
-                ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
-                false,
-                false,
-            )
-            .run();
-    }
+    world
+        .tx()
+        .from(GOVERNANCE)
+        .to(POLICY_SC_ADDRESS)
+        .typed(DrwaPolicyRegistryProxy)
+        .set_token_policy(
+            ManagedBuffer::from(TOKEN_ID),
+            true,
+            false,
+            false,
+            false,
+            ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
+            ManagedVec::<StaticApi, ManagedBuffer<StaticApi>>::new(),
+            false,
+            false,
+        )
+        .run();
 }
 
 /// Deploy, register an asset via typed proxy, query back and verify the

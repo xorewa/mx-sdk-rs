@@ -219,7 +219,7 @@ pub trait DrwaPolicyRegistry: drwa_common::DrwaGovernanceModule {
 
         let cid_len = cid.len();
         require!(
-            cid_len >= 46 && cid_len <= 64,
+            (46..=64).contains(&cid_len),
             "invalid CID length: must be 46-64 characters"
         );
         let mut cid_bytes = [0u8; 64];

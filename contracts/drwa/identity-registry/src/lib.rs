@@ -255,10 +255,10 @@ pub trait DrwaIdentityRegistry: drwa_common::DrwaGovernanceModule {
         );
 
         let current = self.identity(&subject).get();
-        if current.kyc_status == ManagedBuffer::from(b"deactivated")
-            && current.aml_status == ManagedBuffer::from(b"deactivated")
+        if current.kyc_status == b"deactivated"
+            && current.aml_status == b"deactivated"
             && current.investor_class.is_empty()
-            && current.jurisdiction_code == ManagedBuffer::from(b"DEACTIVATED")
+            && current.jurisdiction_code == b"DEACTIVATED"
             && current.expiry_round == 0
         {
             return self.emit_sync_noop_envelope(DrwaCallerDomain::IdentityRegistry);

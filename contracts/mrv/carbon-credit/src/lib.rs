@@ -1732,8 +1732,7 @@ pub trait CarbonCreditModule: mrv_common::MrvGovernanceModule {
         }
         canonical.append_bytes(b"]");
 
-        let hash = self.crypto().sha256(&canonical).as_managed_buffer().clone();
-        hash
+        self.crypto().sha256(&canonical).as_managed_buffer().clone()
     }
 
     // ISSUE-023: companion to compute_canonical_gsoc_serial_inventory_hash.

@@ -444,12 +444,12 @@ pub trait MrvRegistry: mrv_common::MrvGovernanceModule {
         );
         let mut record = self.methodology_records().get(&key).unwrap();
         require!(
-            record.approval_status == ManagedBuffer::from(b"approved_internal"),
+            record.approval_status == b"approved_internal",
             "methodology must be approved_internal before supersession"
         );
         let replacement = self.methodology_records().get(&replacement_key).unwrap();
         require!(
-            replacement.approval_status == ManagedBuffer::from(b"approved_internal"),
+            replacement.approval_status == b"approved_internal",
             "replacement methodology must be approved_internal"
         );
         record.effective_to = effective_to;
@@ -722,7 +722,7 @@ pub trait MrvRegistry: mrv_common::MrvGovernanceModule {
             self.is_valid_verification_transition(&record.status, &status),
             "invalid verification transition"
         );
-        if status == ManagedBuffer::from(b"approved") {
+        if status == b"approved" {
             require!(
                 caller == assignee,
                 "VVB_CALLER_MISMATCH: approved verification must be submitted by assignee"
@@ -1941,7 +1941,7 @@ pub trait MrvRegistry: mrv_common::MrvGovernanceModule {
         );
         let methodology = self.methodology_records().get(&methodology_key).unwrap();
         require!(
-            methodology.approval_status == ManagedBuffer::from(b"approved_internal"),
+            methodology.approval_status == b"approved_internal",
             "methodology must be approved_internal"
         );
     }

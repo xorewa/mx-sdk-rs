@@ -204,11 +204,11 @@ pub trait ReserveProofRegistry: mrv_common::MrvGovernanceModule {
             "INVALID_RESERVE_ARITHMETIC: issued < retired"
         );
         require!(
-            BigUint::from(total_issued) == canonical_total_issued,
+            canonical_total_issued == total_issued,
             "CANONICAL_GSOC_ISSUED_MISMATCH: supplied total_issued does not match lifecycle counters"
         );
         require!(
-            BigUint::from(total_retired) == canonical_total_retired,
+            canonical_total_retired == total_retired,
             "CANONICAL_GSOC_RETIRED_MISMATCH: supplied total_retired does not match lifecycle counters"
         );
         require!(

@@ -30,7 +30,7 @@ fn test_device_public_key<M: ManagedTypeApi>() -> ManagedBuffer<M> {
     ManagedBuffer::from(signing_key.verifying_key().as_bytes())
 }
 
-fn iot_signature<M: ManagedTypeApi>(
+fn iot_signature<M>(
     device: TestAddress,
     pai_id: &[u8],
     period_start: u64,
@@ -75,6 +75,8 @@ fn oracle_reading_signature_payload(
     )
 }
 
+// This helper mirrors the eight independently signed fields in the on-chain payload.
+#[allow(clippy::too_many_arguments)]
 fn oracle_reading_signature_payload_for_sc(
     sc_address: &[u8],
     device: TestAddress,
@@ -99,7 +101,7 @@ fn oracle_reading_signature_payload_for_sc(
     payload
 }
 
-fn iot_signature_for_sc<M: ManagedTypeApi>(
+fn iot_signature_for_sc<M>(
     sc_address: &[u8],
     device: TestAddress,
     pai_id: &[u8],
