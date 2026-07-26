@@ -18,7 +18,7 @@ const MAX_RETRIES: u64 = 5;
 const RETRY_DELAY: time::Duration = time::Duration::from_secs(2);
 const USER_AGENT: &str = "multiversx-sc-meta";
 const SCENARIO_CLI_RELEASES_BASE_URL: &str =
-    "https://api.github.com/repos/multiversx/mx-chain-scenario-cli-go/releases";
+    "https://api.github.com/repos/xorewa/mx-chain-scenario-cli-go/releases";
 const CARGO_HOME: &str = env!("CARGO_HOME");
 
 #[derive(Clone, Debug)]
@@ -213,5 +213,37 @@ impl ScenarioGoInstaller {
             self.zip_temp_path().display()
         ));
         std::fs::remove_file(self.zip_temp_path()).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{SCENARIO_CLI_RELEASES_BASE_URL, ScenarioGoInstaller};
+    use std::path::PathBuf;
+
+    fn installer(tag: Option<&str>) -> ScenarioGoInstaller {
+        ScenarioGoInstaller {
+            tag: tag.map(str::to_owned),
+            zip_name: "mx_scenario_go_linux_amd64.zip".to_string(),
+            user_agent: "test".to_string(),
+            temp_dir_path: PathBuf::from("/tmp"),
+            cargo_bin_folder: PathBuf::from("/tmp/bin"),
+        }
+    }
+
+    #[test]
+    fn release_url_uses_xorewa_tagged_release() {
+        assert_eq!(
+            installer(Some("v5.1.0-xorewa")).release_url(),
+            format!("{SCENARIO_CLI_RELEASES_BASE_URL}/tags/v5.1.0-xorewa"),
+        );
+    }
+
+    #[test]
+    fn release_url_uses_xorewa_latest_release_by_default() {
+        assert_eq!(
+            installer(None).release_url(),
+            format!("{SCENARIO_CLI_RELEASES_BASE_URL}/latest"),
+        );
     }
 }
