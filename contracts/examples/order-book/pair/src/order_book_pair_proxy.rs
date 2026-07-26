@@ -268,7 +268,9 @@ where
 
 #[type_abi]
 #[rustfmt::skip]
-#[derive(ManagedVecItem, TopEncode, TopDecode, NestedEncode, NestedDecode, PartialEq, Eq, Clone, Copy)]
+#[derive(
+    ManagedVecItem, TopEncode, TopDecode, NestedEncode, NestedDecode, PartialEq, Eq, Clone, Copy,
+)]
 pub enum OrderType {
     Buy,
     Sell,

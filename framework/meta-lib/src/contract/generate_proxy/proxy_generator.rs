@@ -686,7 +686,20 @@ where
         if derive_attrs.is_empty() {
             self.writeln("#[derive(TopEncode, TopDecode)]");
         } else {
-            self.writeln(format!("#[derive({})]", derive_attrs.join(", ")));
+            let derive_contents = derive_attrs.join(", ");
+            // Keep generated proxies stable under the repository's rustfmt
+            // configuration. Rustfmt expands attributes wider than 100 columns;
+            // emitting that layout directly means `proxy --compare` and the CI
+            // formatting check agree on the generated source.
+            const RUSTFMT_MAX_WIDTH: usize = 100;
+            let single_line = format!("#[derive({derive_contents})]");
+            if single_line.len() > RUSTFMT_MAX_WIDTH {
+                self.writeln("#[derive(");
+                self.writeln(format!("    {derive_contents},"));
+                self.writeln(")]");
+            } else {
+                self.writeln(single_line);
+            }
         }
     }
 
