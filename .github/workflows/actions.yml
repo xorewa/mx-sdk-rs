@@ -34,7 +34,9 @@ jobs:
       runs-on: ubuntu-latest
       rust-target: wasm32v1-none
       path-to-sc-meta: framework/meta
-      mx-scenario-go-version: v5.1.0
+      # Xorewa-only release with reviewed NewArc VM/scenario dependencies and
+      # both Linux and Intel-macOS installer artifacts.
+      mx-scenario-go-version: v5.1.1-xorewa.1
       wasm-opt-version: 125
 
   build-contracts:

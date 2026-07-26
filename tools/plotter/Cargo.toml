@@ -31,3 +31,8 @@ default-features = false
 
 [workspace]
 members = ["."]
+
+# This standalone CI workspace does not inherit the repository root patch.
+# Keep its VM ABI aligned with the Xorewa chain/vm implementation.
+[patch.crates-io]
+multiversx-chain-vm-executor = { git = "https://github.com/xorewa/mx-vm-executor-rs", rev = "830f3efa2a1c8103424e4dd0c65b786e1f8305cf" }

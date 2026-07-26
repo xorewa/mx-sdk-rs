@@ -593,8 +593,7 @@ dependencies = [
 [[package]]
 name = "multiversx-chain-vm-executor"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b72af69cd251075c0bc020ea72f0d2056ac0966fc17aced17b866a5324536e28"
+source = "git+https://github.com/xorewa/mx-vm-executor-rs?rev=830f3efa2a1c8103424e4dd0c65b786e1f8305cf#830f3efa2a1c8103424e4dd0c65b786e1f8305cf"
 dependencies = [
  "serde",
 ]

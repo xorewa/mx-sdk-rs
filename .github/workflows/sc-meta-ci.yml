@@ -29,7 +29,7 @@ jobs:
         run: |
           cargo install wasm-opt
           cargo install --path framework/meta
-          sc-meta install mx-scenario-go --tag v5.1.1-xorewa
+          sc-meta install mx-scenario-go --tag v5.1.1-xorewa.1
 
           which wasm-opt
           which mx-scenario-go
@@ -56,7 +56,7 @@ jobs:
         run: |
           cargo install wasm-opt
           cargo install --path framework/meta
-          sc-meta install mx-scenario-go --tag v5.1.1-xorewa
+          sc-meta install mx-scenario-go --tag v5.1.1-xorewa.1
           sc-meta install wasm32
 
           which wasm-opt

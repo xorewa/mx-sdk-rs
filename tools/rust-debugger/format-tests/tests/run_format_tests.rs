@@ -73,7 +73,8 @@ fn run_format_tests() {
 
     assert!(
         debugger_output.status.success(),
-        "Debugger returned a non-zero status"
+        "Debugger returned a non-zero status:\n{}",
+        String::from_utf8_lossy(&debugger_output.stderr)
     );
 
     let stdout_lines: Vec<String> = debugger_output
@@ -84,7 +85,13 @@ fn run_format_tests() {
     let begin_index = stdout_lines
         .iter()
         .position(|line| line == "TEST REPORT BEGIN")
-        .unwrap_or_else(|| panic_with_stdout("Report begin marker not found", &stdout_lines));
+        .unwrap_or_else(|| {
+            panic_with_debugger_output(
+                "Report begin marker not found",
+                &stdout_lines,
+                &debugger_output.stderr,
+            )
+        });
     let end_index = stdout_lines
         .iter()
         .position(|line| line == "TEST REPORT END")
@@ -105,9 +112,14 @@ fn run_format_tests() {
     }
 }
 
-fn panic_with_stdout(message: &str, stdout_lines: &Vec<String>) -> ! {
+fn panic_with_debugger_output(message: &str, stdout_lines: &[String], stderr: &[u8]) -> ! {
     let debugger_output = stdout_lines.join("\n");
-    panic!("{} - see debugger output:\n{}\n", message, debugger_output);
+    panic!(
+        "{} - see debugger stdout:\n{}\nDebugger stderr:\n{}",
+        message,
+        debugger_output,
+        String::from_utf8_lossy(stderr),
+    );
 }
 
 fn check_path<P: AsRef<Path>>(path: P) {
@@ -119,5 +131,11 @@ fn check_path<P: AsRef<Path>>(path: P) {
 }
 
 fn command_script_import(script_path: &Path) -> String {
-    format!("command script import {}", script_path.display())
+    // LLDB tokenizes command arguments. Quote the path because CI or developer
+    // workspaces may legitimately contain spaces.
+    let path = script_path
+        .to_string_lossy()
+        .replace('\\', "\\\\")
+        .replace('\'', "\\'");
+    format!("command script import '{path}'")
 }
