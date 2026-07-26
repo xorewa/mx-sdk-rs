@@ -6,12 +6,23 @@ use multiversx_sc_meta::{
     },
     version_history::{self, LAST_TEMPLATE_VERSION},
 };
-use multiversx_sc_meta_lib::tools::find_current_workspace;
+use multiversx_sc_meta_lib::{cargo_toml::CargoTomlContents, tools::find_current_workspace};
+use toml::{Value, value::Table};
 
 const CONTRACTS_DIR_NAME: &str = "contracts";
 const TEMPLATE_TEST_CURRENT_SUB_PATH: &str = "test-template-current";
 const TEMPLATE_TEST_RELEASED_SUB_PATH: &str = "test-template-released";
 const BUILD_CONTRACTS: bool = true;
+
+// Current-template tests deliberately retain paths into this checkout. The VM in this
+// checkout has hooks that require the matching xorewa executor revision; an independent
+// generated workspace cannot inherit the checkout root's Cargo patch.
+const XOREWA_VM_EXECUTOR_REPOSITORY: &str = "https://github.com/xorewa/mx-vm-executor-rs";
+const XOREWA_VM_EXECUTOR_REVISION: &str = "830f3efa2a1c8103424e4dd0c65b786e1f8305cf";
+const VM_EXECUTOR_CRATES: [&str; 2] = [
+    "multiversx-chain-vm-executor",
+    "multiversx-chain-vm-executor-wasmer-experimental",
+];
 
 #[test]
 fn test_template_list() {
@@ -28,6 +39,39 @@ fn test_template_list() {
             "ping-pong-egld".to_string(),
         ]
     );
+}
+
+#[test]
+#[cfg_attr(not(feature = "template-test-current"), ignore)]
+fn current_template_pins_matching_vm_executor() {
+    let target = setup_template_test_current(
+        "empty",
+        TEMPLATE_TEST_CURRENT_SUB_PATH,
+        "new-empty-executor-patch",
+    );
+    let cargo_toml = CargoTomlContents::load_from_file(target.contract_dir().join("Cargo.toml"));
+    let crates_io_patch = cargo_toml
+        .toml_value
+        .get("patch")
+        .and_then(Value::as_table)
+        .and_then(|patch| patch.get("crates-io"))
+        .and_then(Value::as_table)
+        .expect("generated current template is missing [patch.crates-io]");
+
+    for crate_name in VM_EXECUTOR_CRATES {
+        let dependency = crates_io_patch
+            .get(crate_name)
+            .and_then(Value::as_table)
+            .unwrap_or_else(|| panic!("generated current template is missing {crate_name}"));
+        assert_eq!(
+            dependency.get("git").and_then(Value::as_str),
+            Some(XOREWA_VM_EXECUTOR_REPOSITORY),
+        );
+        assert_eq!(
+            dependency.get("rev").and_then(Value::as_str),
+            Some(XOREWA_VM_EXECUTOR_REVISION),
+        );
+    }
 }
 
 #[test]
@@ -129,7 +173,44 @@ fn setup_template_test_current(
     )
     .create_contract(LAST_TEMPLATE_VERSION);
 
+    patch_current_template_vm_executor(&target);
+
     target
+}
+
+/// Makes the generated test workspace self-contained with the executor revision required by
+/// the current NewArc VM. This is intentionally test-only: normal `sc-meta new` generation
+/// downloads and targets the upstream released SDK, which must not acquire a NewArc fork patch.
+fn patch_current_template_vm_executor(target: &ContractCreatorTarget) {
+    let cargo_toml_path = target.contract_dir().join("Cargo.toml");
+    let mut cargo_toml = CargoTomlContents::load_from_file(&cargo_toml_path);
+
+    let patch = cargo_toml
+        .toml_value
+        .entry("patch".to_string())
+        .or_insert_with(|| Value::Table(Table::new()))
+        .as_table_mut()
+        .expect("malformed [patch] table in generated Cargo.toml");
+    let crates_io = patch
+        .entry("crates-io".to_string())
+        .or_insert_with(|| Value::Table(Table::new()))
+        .as_table_mut()
+        .expect("malformed [patch.crates-io] table in generated Cargo.toml");
+
+    for crate_name in VM_EXECUTOR_CRATES {
+        let mut dependency = Table::new();
+        dependency.insert(
+            "git".to_string(),
+            Value::String(XOREWA_VM_EXECUTOR_REPOSITORY.to_string()),
+        );
+        dependency.insert(
+            "rev".to_string(),
+            Value::String(XOREWA_VM_EXECUTOR_REVISION.to_string()),
+        );
+        crates_io.insert(crate_name.to_string(), Value::Table(dependency));
+    }
+
+    cargo_toml.save_to_file(cargo_toml_path);
 }
 
 /// Recreates the folder structure in `contracts`, on the same level.
