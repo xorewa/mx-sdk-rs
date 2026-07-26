@@ -16,7 +16,7 @@ const GOVERNANCE_CODE_PATH: MxscPath =
     MxscPath::new("mxsc:../governance/output/mrv-governance.mxsc.json");
 
 fn world() -> ScenarioWorld {
-    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::Debugger);
     world.set_current_dir_from_workspace("contracts/mrv/registry");
     world.register_contract(CODE_PATH, mrv_registry::ContractBuilder);
     world.register_contract(GOVERNANCE_CODE_PATH, mrv_governance::ContractBuilder);

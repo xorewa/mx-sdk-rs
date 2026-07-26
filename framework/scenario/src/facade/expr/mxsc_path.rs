@@ -22,11 +22,15 @@ impl<'a> MxscPath<'a> {
 
 impl MxscPath<'_> {
     pub fn eval_to_expr(&self) -> String {
-        format!("{MXSC_PREFIX}{}", self.path)
+        format!("{MXSC_PREFIX}{}", self.path_without_prefix())
     }
 
     pub fn resolve_contents(&self, context: &InterpreterContext) -> Vec<u8> {
-        interpret_string(&format!("{MXSC_PREFIX}{}", self.path), context)
+        interpret_string(&self.eval_to_expr(), context)
+    }
+
+    fn path_without_prefix(&self) -> &str {
+        self.path.strip_prefix(MXSC_PREFIX).unwrap_or(self.path)
     }
 }
 
@@ -63,5 +67,10 @@ pub mod tests {
     #[test]
     fn test_address_value() {
         assert_eq_eval("output/adder.mxsc.json", "mxsc:output/adder.mxsc.json");
+    }
+
+    #[test]
+    fn test_already_prefixed_path_is_not_prefixed_twice() {
+        assert_eq_eval("mxsc:output/adder.mxsc.json", "mxsc:output/adder.mxsc.json");
     }
 }

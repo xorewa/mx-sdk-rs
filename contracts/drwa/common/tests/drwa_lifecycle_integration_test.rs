@@ -48,7 +48,7 @@ const TOKEN_ID: &[u8] = b"CARBON-ab12cd";
 // ── World setup ────────────────────────────────────────────────────────
 
 fn world() -> ScenarioWorld {
-    let mut w = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut w = ScenarioWorld::new().executor_config(ExecutorConfig::Debugger);
     w.set_current_dir_from_workspace("contracts/drwa/common");
     w.register_contract(POLICY_CODE, drwa_policy_registry::ContractBuilder);
     w.register_contract(IDENTITY_CODE, drwa_identity_registry::ContractBuilder);

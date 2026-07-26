@@ -9,7 +9,7 @@ const SC_ADDRESS: TestSCAddress = TestSCAddress::new("mrv-governance-multisig");
 const CODE_PATH: MxscPath = MxscPath::new("mxsc:output/mrv-governance-multisig.mxsc.json");
 
 fn world() -> ScenarioWorld {
-    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::Debugger);
     world.set_current_dir_from_workspace("contracts/mrv/governance-multisig");
     world.register_contract(CODE_PATH, mrv_governance_multisig::ContractBuilder);
     world

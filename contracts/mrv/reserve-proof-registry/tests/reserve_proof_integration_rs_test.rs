@@ -28,7 +28,7 @@ const DGSC_TOKEN: TestTokenIdentifier = TestTokenIdentifier::new("DGSC-123456");
 const BUFFER_TOKEN: TestTokenIdentifier = TestTokenIdentifier::new("DVCUBUF-123456");
 
 fn world() -> ScenarioWorld {
-    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::Debugger);
     world.set_current_dir_from_workspace("contracts/mrv/reserve-proof-registry");
     world.register_contract(CARBON_CODE, mrv_carbon_credit::ContractBuilder);
     world.register_contract(BUFFER_CODE, mrv_buffer_pool::ContractBuilder);

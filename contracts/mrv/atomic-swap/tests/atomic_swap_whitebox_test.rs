@@ -21,7 +21,7 @@ macro_rules! allow_dvcu_token {
 }
 
 fn world() -> ScenarioWorld {
-    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::Debugger);
     world.set_current_dir_from_workspace("contracts/mrv/atomic-swap");
     world.register_contract(CODE_PATH, mrv_atomic_swap::ContractBuilder);
     world.register_contract(GOVERNANCE_CODE, mrv_governance::ContractBuilder);

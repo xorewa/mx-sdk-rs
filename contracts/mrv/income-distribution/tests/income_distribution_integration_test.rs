@@ -19,6 +19,9 @@ const HOLDER_A: TestAddress = TestAddress::new("holder_a");
 const INCOME_SC: TestSCAddress = TestSCAddress::new("mrv-income-distribution");
 const CODE_PATH: MxscPath = MxscPath::new("mxsc:output/mrv-income-distribution.mxsc.json");
 const COME_TOKEN: TestTokenIdentifier = TestTokenIdentifier::new("COME-abcdef");
+// This fixture must be valid in both executors. The compiled Wasm executor
+// starts from a non-zero epoch, while the debug executor starts at zero.
+const TEST_EXPIRY_EPOCH: u64 = 10_000;
 
 fn world() -> ScenarioWorld {
     let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
@@ -68,7 +71,7 @@ fn claim_yield_rejects_oversized_merkle_proof() {
             ManagedBuffer::from(&merkle_root[..]),
             100u64,
             ManagedBuffer::from("Qm-test-cid"),
-            1_000u64,
+            TEST_EXPIRY_EPOCH,
         )
         .payment(EsdtTokenPayment::new(
             COME_TOKEN.to_esdt_token_identifier(),
@@ -135,7 +138,7 @@ fn fund_and_query_lifecycle() {
             ManagedBuffer::from(&merkle_root[..]),
             100u64,
             ManagedBuffer::from("Qm-lifecycle-cid"),
-            1_000u64,
+            TEST_EXPIRY_EPOCH,
         )
         .payment(EsdtTokenPayment::new(
             COME_TOKEN.to_esdt_token_identifier(),

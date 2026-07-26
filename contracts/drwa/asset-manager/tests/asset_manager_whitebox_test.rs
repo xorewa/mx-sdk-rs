@@ -20,7 +20,7 @@ const TOKEN_ID_2: &[u8] = b"HOTEL-bc23de";
 const TOKEN_ID_3: &[u8] = b"HOTEL-cd34ef";
 
 fn world() -> ScenarioWorld {
-    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::Debugger);
     world.set_current_dir_from_workspace("contracts/drwa/asset-manager");
     world.register_contract(CODE_PATH, drwa_asset_manager::ContractBuilder);
     world.register_contract(POLICY_CODE_PATH, drwa_policy_registry::ContractBuilder);

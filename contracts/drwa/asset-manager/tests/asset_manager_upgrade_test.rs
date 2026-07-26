@@ -1,6 +1,5 @@
 use multiversx_sc_scenario::imports::*;
 
-use drwa_asset_manager::DrwaAssetManager;
 use drwa_asset_manager::drwa_asset_manager_proxy::DrwaAssetManagerProxy;
 use drwa_policy_registry::drwa_policy_registry_proxy::DrwaPolicyRegistryProxy;
 
@@ -120,19 +119,35 @@ fn asset_manager_upgrade_preserves_asset_holder_and_storage_version() {
         .code(CODE_PATH)
         .run();
 
-    world
+    // These assertions intentionally use public views rather than `whitebox`.
+    // The upgrade must be verified against the compiled Wasm artifact as well as
+    // the debug executor, and `whitebox` only exists in the latter.
+    let storage_version = world
         .query()
         .to(SC_ADDRESS)
-        .whitebox(drwa_asset_manager::contract_obj, |sc| {
-            assert_eq!(sc.storage_version().get(), 1);
+        .raw_call("getStorageVersion")
+        .returns(ReturnsRawResult)
+        .run();
+    // MultiversX top-level integer encoding is minimal-width, so `1u32` is
+    // returned as the single byte `0x01` rather than four big-endian bytes.
+    assert_eq!(storage_version, vec![vec![1u8]].into());
 
-            let asset = sc.asset(&ManagedBuffer::from(TOKEN_ID)).get();
-            assert!(asset.regulated);
+    let asset: drwa_asset_manager::AssetRecord<StaticApi> = world
+        .query()
+        .to(SC_ADDRESS)
+        .typed(DrwaAssetManagerProxy)
+        .asset(ManagedBuffer::from(TOKEN_ID))
+        .returns(ReturnsResult)
+        .run();
+    assert!(asset.regulated);
 
-            let mirror = sc
-                .holder_mirror(&ManagedBuffer::from(TOKEN_ID), &HOLDER.to_managed_address())
-                .get();
-            assert_eq!(mirror.holder_policy_version, 1u64);
-            assert!(!mirror.auditor_authorized);
-        });
+    let mirror: drwa_common::DrwaHolderMirror<StaticApi> = world
+        .query()
+        .to(SC_ADDRESS)
+        .typed(DrwaAssetManagerProxy)
+        .get_holder_mirror(ManagedBuffer::from(TOKEN_ID), HOLDER.to_managed_address())
+        .returns(ReturnsResult)
+        .run();
+    assert_eq!(mirror.holder_policy_version, 1u64);
+    assert!(!mirror.auditor_authorized);
 }

@@ -16,7 +16,7 @@ const VERIFICATION_CASE_ID: &[u8] = b"verification-public-010";
 const LOT_ID: &[u8] = b"lot-public-010";
 
 fn world() -> ScenarioWorld {
-    let mut blockchain = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut blockchain = ScenarioWorld::new().executor_config(ExecutorConfig::Debugger);
     blockchain.set_current_dir_from_workspace("contracts/mrv/registry");
     blockchain.register_contract(CODE_PATH, mrv_registry::ContractBuilder);
     blockchain

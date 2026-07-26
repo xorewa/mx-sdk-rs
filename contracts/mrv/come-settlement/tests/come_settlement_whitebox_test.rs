@@ -17,7 +17,7 @@ const SIGNER_ONE: TestAddress = TestAddress::new("signer-one");
 const SIGNER_TWO: TestAddress = TestAddress::new("signer-two");
 
 fn world() -> ScenarioWorld {
-    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::full_suite());
+    let mut world = ScenarioWorld::new().executor_config(ExecutorConfig::Debugger);
     world.set_current_dir_from_workspace("contracts/mrv/come-settlement");
     world.register_contract(CODE_PATH, mrv_come_settlement::ContractBuilder);
     world.register_contract(GOVERNANCE_CODE, mrv_governance::ContractBuilder);
