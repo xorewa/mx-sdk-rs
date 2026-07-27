@@ -5,7 +5,8 @@ on:
     branches:
       - NewArc
   pull_request:
-  workflow_dispatch:
+    branches:
+      - NewArc
 
 permissions:
   checks: write
@@ -14,21 +15,21 @@ permissions:
 jobs:
   rust-tests-min:
     name: Rust Tests (rustc 1.85)
-    uses: multiversx/mx-sc-actions/.github/workflows/rust-tests.yml@v6.0.1
+    uses: xorewa/mx-sc-actions/.github/workflows/rust-tests.yml@0cea8a2cbfd5f69cf7dfca957868803da69617de
     with:
       rust-toolchain: 1.85
       runs-on: ubuntu-latest
 
   rust-tests-max:
     name: Rust Tests (rustc 1.96)
-    uses: multiversx/mx-sc-actions/.github/workflows/rust-tests.yml@v6.0.1
+    uses: xorewa/mx-sc-actions/.github/workflows/rust-tests.yml@0cea8a2cbfd5f69cf7dfca957868803da69617de
     with:
       rust-toolchain: 1.96
       runs-on: ubuntu-latest
 
   setup:
     name: Setup Environment
-    uses: multiversx/mx-sc-actions/.github/workflows/setup.yml@v6.0.1
+    uses: xorewa/mx-sc-actions/.github/workflows/setup.yml@0cea8a2cbfd5f69cf7dfca957868803da69617de
     with:
       rust-toolchain: 1.96
       runs-on: ubuntu-latest
@@ -42,7 +43,7 @@ jobs:
   build-contracts:
     name: Build Contracts
     needs: setup
-    uses: multiversx/mx-sc-actions/.github/workflows/build-contracts.yml@v6.0.1
+    uses: xorewa/mx-sc-actions/.github/workflows/build-contracts.yml@0cea8a2cbfd5f69cf7dfca957868803da69617de
     with:
       rust-toolchain: 1.96
       runs-on: ubuntu-latest
@@ -51,7 +52,7 @@ jobs:
   wasm-tests:
     name: Wasm Tests
     needs: build-contracts
-    uses: multiversx/mx-sc-actions/.github/workflows/wasm-tests.yml@v6.0.1
+    uses: xorewa/mx-sc-actions/.github/workflows/wasm-tests.yml@0cea8a2cbfd5f69cf7dfca957868803da69617de
     with:
       rust-toolchain: 1.96
       runs-on: ubuntu-latest
@@ -59,7 +60,7 @@ jobs:
   generate-report:
     name: Generate Report
     needs: build-contracts
-    uses: multiversx/mx-sc-actions/.github/workflows/report.yml@v6.0.1
+    uses: xorewa/mx-sc-actions/.github/workflows/report.yml@0cea8a2cbfd5f69cf7dfca957868803da69617de
     with:
       rust-toolchain: 1.96
       runs-on: ubuntu-latest
@@ -68,7 +69,7 @@ jobs:
     name: Test Coverage
     if: false  # Temporarily disabled
     needs: setup
-    uses: multiversx/mx-sc-actions/.github/workflows/coverage.yml@v6.0.1
+    uses: xorewa/mx-sc-actions/.github/workflows/coverage.yml@0cea8a2cbfd5f69cf7dfca957868803da69617de
     with:
       rust-toolchain: 1.96
       runs-on: ubuntu-latest
@@ -77,7 +78,7 @@ jobs:
   proxy-compare:
     name: Proxy Compare
     needs: setup
-    uses: multiversx/mx-sc-actions/.github/workflows/proxy-compare.yml@v6.0.1
+    uses: xorewa/mx-sc-actions/.github/workflows/proxy-compare.yml@0cea8a2cbfd5f69cf7dfca957868803da69617de
     with:
       rust-toolchain: 1.96
       runs-on: ubuntu-latest

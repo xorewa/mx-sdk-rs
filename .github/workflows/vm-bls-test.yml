@@ -5,6 +5,8 @@ on:
     branches:
       - NewArc
   pull_request:
+    branches:
+      - NewArc
 
 permissions:
   checks: write
@@ -26,6 +28,4 @@ jobs:
       - name: Rust VM tests, including BLS
         run: |
           cd chain/vm
-          cargo test --features bls 
-          
-  
+          cargo test --features bls

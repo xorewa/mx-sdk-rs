@@ -5,6 +5,8 @@ on:
     branches:
       - NewArc
   pull_request:
+    branches:
+      - NewArc
 
 permissions:
   checks: write

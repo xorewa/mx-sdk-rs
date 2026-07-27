@@ -1,4 +1,8 @@
-name: Upload assets on release
+# Deliberately inactive.  This former release workflow can publish GitHub
+# release assets and installs the upstream-named sc-meta package.  Xorewa's
+# NewArc CI policy permits only NewArc branch CI; retain this file for review
+# until an explicit Xorewa release policy and owned release tooling exist.
+name: Upload assets on release (disabled)
 
 on:
   release:

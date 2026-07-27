@@ -5,7 +5,8 @@ on:
     branches:
       - NewArc
   pull_request:
-  workflow_dispatch:
+    branches:
+      - NewArc
 
 jobs:
   interactor-tests:
