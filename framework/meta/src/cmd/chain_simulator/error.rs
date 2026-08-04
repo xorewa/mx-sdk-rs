@@ -2,7 +2,7 @@ use colored::*;
 use std::fmt;
 
 pub const DOCKER_CMD: &str = "docker";
-pub const SIMULATOR_IMAGE: &str = "multiversx/chainsimulator:latest";
+pub const SIMULATOR_IMAGE: &str = "xorewa/chainsimulator:latest";
 pub const DEFAULT_PORT: &str = "8085:8085";
 
 #[derive(Debug)]
