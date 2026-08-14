@@ -22,3 +22,6 @@ path = "../common"
 [dev-dependencies.multiversx-sc-scenario]
 workspace = true
 features = ["wasmer-experimental"]
+
+[dev-dependencies.multisig]
+path = "../../examples/multisig"

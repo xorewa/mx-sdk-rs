@@ -5,6 +5,17 @@ fn world() -> ScenarioWorld {
 }
 
 #[test]
+fn drwa_async_callback_egld_nonpayable_metadata_characterization_go() {
+    world()
+        .run("scenarios/drwa_async_callback_egld_nonpayable_metadata_characterization.scen.json");
+}
+
+#[test]
+fn drwa_legacy_callback_direct_value_dust_characterization_go() {
+    world().run("scenarios/drwa_legacy_callback_direct_value_dust_characterization.scen.json");
+}
+
+#[test]
 fn builtin_func_delete_user_name_go() {
     world().run("scenarios/builtin_func_delete_user_name.scen.json");
 }

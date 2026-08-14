@@ -1,0 +1,44 @@
+{
+    "name": "DRWA characterization: a named EGLD-payable endpoint remains callable when account metadata is nonpayable",
+    "gasSchedule": "v3",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "sc:payable-features": {
+                    "nonce": "0",
+                    "balance": "0",
+                    "code": "mxsc:../output/payable-features.mxsc.json",
+                    "codeMetadata": "0x0000"
+                },
+                "address:drwa-funder": {
+                    "nonce": "0",
+                    "balance": "1,000"
+                }
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "fund-named-intent",
+            "tx": {
+                "from": "address:drwa-funder",
+                "to": "sc:payable-features",
+                "egldValue": "5",
+                "function": "payable_egld_1",
+                "arguments": [],
+                "gasLimit": "50,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [
+                    "5",
+                    "str:EGLD"
+                ],
+                "status": "0",
+                "logs": "*",
+                "gas": "*",
+                "refund": "*"
+            }
+        }
+    ]
+}

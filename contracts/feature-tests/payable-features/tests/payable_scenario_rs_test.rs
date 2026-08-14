@@ -12,6 +12,12 @@ fn world() -> ScenarioWorld {
 }
 
 #[test]
+fn drwa_named_egld_endpoint_nonpayable_metadata_characterization_rs() {
+    world()
+        .run("scenarios/drwa_named_egld_endpoint_nonpayable_metadata_characterization.scen.json");
+}
+
+#[test]
 fn payable_all_1_rs() {
     world().run("scenarios/payable_all_1.scen.json");
 }

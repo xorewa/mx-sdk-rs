@@ -202,3 +202,81 @@ fn drwa_auth_admin_rejects_init_below_procedure_floor_quorum() {
             sc.init(2, TEST_TTL_ROUNDS, signers.into());
         });
 }
+
+#[test]
+fn drwa_auth_admin_has_no_deployer_derived_or_empty_signer_bootstrap() {
+    let mut w = world();
+    w.account(OWNER).nonce(1);
+
+    w.tx()
+        .from(OWNER)
+        .raw_deploy()
+        .code(CODE_PATH)
+        .new_address(ADMIN_SC)
+        .returns(ExpectError(4u64, "signers must not be empty"))
+        .whitebox(drwa_auth_admin::contract_obj, |sc| {
+            let signers = ManagedVec::new();
+            sc.init(1, TEST_TTL_ROUNDS, signers.into());
+        });
+}
+
+#[test]
+fn drwa_auth_admin_rejects_explicit_one_of_one_deployer_configuration() {
+    let mut w = world();
+    w.account(OWNER).nonce(1);
+
+    w.tx()
+        .from(OWNER)
+        .raw_deploy()
+        .code(CODE_PATH)
+        .new_address(ADMIN_SC)
+        .returns(ExpectError(
+            4u64,
+            "signer count below procedure floor (3-of-5)",
+        ))
+        .whitebox(drwa_auth_admin::contract_obj, |sc| {
+            let mut signers = ManagedVec::new();
+            signers.push(OWNER.to_managed_address());
+            sc.init(1, TEST_TTL_ROUNDS, signers.into());
+        });
+}
+
+#[test]
+fn drwa_auth_admin_same_immediate_caller_never_counts_more_than_once() {
+    let mut w = world();
+    deploy_with_quorum(&mut w, 3);
+
+    let mut action_id = 0u64;
+    w.tx()
+        .from(SIGNER_ONE)
+        .to(ADMIN_SC)
+        .whitebox(drwa_auth_admin::contract_obj, |sc| {
+            action_id = sc.propose_update_caller_address(
+                ManagedBuffer::from(AUTH_ADMIN_DOMAIN),
+                ManagedBuffer::from(AUTH_ADMIN_HEX_V1),
+            );
+        });
+
+    for _ in 0..3 {
+        w.tx()
+            .from(SIGNER_ONE)
+            .to(ADMIN_SC)
+            .whitebox(drwa_auth_admin::contract_obj, |sc| sc.sign(action_id));
+    }
+
+    w.query()
+        .to(ADMIN_SC)
+        .whitebox(drwa_auth_admin::contract_obj, |sc| {
+            assert_eq!(sc.action_signers(action_id).len(), 1);
+        });
+
+    w.current_block()
+        .block_timestamp_seconds(TEST_TIMELOCK_SECONDS);
+    w.tx()
+        .from(SIGNER_ONE)
+        .to(ADMIN_SC)
+        .returns(ExpectError(4u64, "insufficient approvals"))
+        .whitebox(drwa_auth_admin::contract_obj, |sc| {
+            let _ = sc.perform_action(action_id);
+        });
+}

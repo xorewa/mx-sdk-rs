@@ -1,0 +1,92 @@
+{
+    "name": "DRWA characterization: the generated legacy callback entry accepts direct unsolicited value when no closure exists",
+    "steps": [
+        {
+            "step": "setState",
+            "accounts": {
+                "address:drwa-duster": {
+                    "nonce": "0",
+                    "balance": "10",
+                    "esdt": {
+                        "str:JUNK-123456": "10"
+                    }
+                },
+                "sc:forwarder": {
+                    "nonce": "0",
+                    "balance": "0",
+                    "code": "mxsc:../forwarder/output/forwarder.mxsc.json",
+                    "codeMetadata": "0x0000"
+                }
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "direct-egld-to-generated-callback-entry",
+            "tx": {
+                "from": "address:drwa-duster",
+                "to": "sc:forwarder",
+                "egldValue": "1",
+                "function": "callBack",
+                "arguments": [],
+                "gasLimit": "50,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "0",
+                "logs": "*",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "scCall",
+            "id": "direct-esdt-to-generated-callback-entry",
+            "tx": {
+                "from": "address:drwa-duster",
+                "to": "sc:forwarder",
+                "esdtValue": [
+                    {
+                        "tokenIdentifier": "str:JUNK-123456",
+                        "value": "1"
+                    }
+                ],
+                "function": "callBack",
+                "arguments": [],
+                "gasLimit": "50,000,000",
+                "gasPrice": "0"
+            },
+            "expect": {
+                "out": [],
+                "status": "0",
+                "logs": "*",
+                "gas": "*",
+                "refund": "*"
+            }
+        },
+        {
+            "step": "checkState",
+            "accounts": {
+                "address:drwa-duster": {
+                    "nonce": "2",
+                    "balance": "9",
+                    "esdt": {
+                        "str:JUNK-123456": "9"
+                    },
+                    "storage": {},
+                    "code": ""
+                },
+                "sc:forwarder": {
+                    "nonce": "0",
+                    "balance": "1",
+                    "esdt": {
+                        "str:JUNK-123456": "1"
+                    },
+                    "storage": {},
+                    "code": "mxsc:../forwarder/output/forwarder.mxsc.json",
+                    "codeMetadata": "0x0000"
+                }
+            }
+        }
+    ]
+}
